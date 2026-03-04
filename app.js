@@ -108,11 +108,23 @@ let currentShippingCost = 0;
    ========================================= */
 window.addEventListener('load', () => {
     setTimeout(() => {
+
         document.body.classList.add('loaded');
+
+        // 🔥 FORZAR DESBLOQUEO DEL SCROLL (SOLUCIÓN SEGURA)
+        document.body.style.overflowY = "auto";
+        document.body.style.overflowX = "hidden";
+
+        // 🔥 Ocultar loader completamente
+        const loader = document.getElementById("loading-screen");
+        if (loader) {
+            loader.style.display = "none";
+        }
+
         showToast('¡Bienvenido a Modo Var!', 'success');
+
     }, 2000);
 });
-
 /* =========================================
    NAVEGACIÓN ENTRE SECCIONES
    ========================================= */
@@ -800,3 +812,8 @@ window.ModoVar = {
     clearCart,
     checkout
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.body.style.overflowY = "auto";
+    document.body.style.overflowX = "hidden";
+});

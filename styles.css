@@ -68,10 +68,6 @@ body {
     transition: background-color var(--transition-normal);
 }
 
-body.loaded {
-    overflow: hidden;
-}
-
 a {
     text-decoration: none;
     color: inherit;
