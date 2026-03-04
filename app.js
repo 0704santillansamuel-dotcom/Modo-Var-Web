@@ -125,6 +125,7 @@ window.addEventListener('load', () => {
 
     }, 2000);
 });
+
 /* =========================================
    NAVEGACIÓN ENTRE SECCIONES
    ========================================= */
@@ -600,8 +601,14 @@ sizeButtons.forEach(btn => {
    ========================================= */
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+
+        // Evitar el caso href="#" que rompe querySelector
+        if (!href || href === '#') return;
+
         e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
+
+        const target = document.querySelector(href);
         if (target) {
             target.scrollIntoView({
                 behavior: 'smooth',
@@ -758,8 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
    MANEJO DE ERRORES
    ========================================= */
 window.addEventListener('error', (e) => {
-    console.error('Error en Modo Var:', e.error);
-    showToast('Ocurrió un error inesperado. Por favor recarga la página.', 'error');
+    console.error('Error en Modo Var:', e.message);
 });
 
 /* =========================================
