@@ -758,8 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
    MANEJO DE ERRORES
    ========================================= */
 window.addEventListener('error', (e) => {
-    console.error('Error en Modo Var:', e.error);
-    showToast('Ocurrió un error inesperado. Por favor recarga la página.', 'error');
+    console.error('Error en Modo Var:', e.message);
 });
 
 /* =========================================
