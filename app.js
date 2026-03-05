@@ -17,6 +17,7 @@ const products = [
         features: [
             "Tecnología ClimaCool",
             "Cuello redondo",
+
             "Manga corta",
             "Escudo oficial",
             "100% Poliéster",
@@ -57,9 +58,9 @@ const products = [
         shortDesc: "Botines profesionales de alto rendimiento para el fútbol argentino.",
         fullDesc: "Botines profesionales de alto rendimiento diseñados para los mejores jugadores del fútbol argentino.\nCon tecnología de suela ligera y agarre óptimo en diferentes superficies.\nMateriales de alta calidad que garantizan durabilidad y confort.\nIdeal para partidos y entrenamientos de alto nivel.",
         images: [
-            "imagenes/titular/titular1.png",
-            "imagenes/titular/titular2.png",
-            "imagenes/titular/titular3.png"
+            "imagenes/titular/titular10.png",
+            "imagenes/titular/titular12.png",
+            "imagenes/titular/titular13.png"
         ],
         features: [
             "Suela ligera",
@@ -79,12 +80,13 @@ const products = [
         shortDesc: "Remera de entrenamiento oficial de la Selección Argentina.",
         fullDesc: "Remera de entrenamiento oficial de la Selección Argentina.\nConfeccionada con materiales transpirables para máximo confort durante el entrenamiento.\nDiseño moderno con los colores tradicionales de la selección.\nIdeal para uso deportivo o casual.",
         images: [
-            "imagenes/titular/titular1.png",
-            "imagenes/titular/titular2.png",
-            "imagenes/titular/titular3.png"
+            "imagenes/titular/titular20.png",
+            "imagenes/titular/titular21.png",
+            "imagenes/titular/titular22.png"
         ],
         features: [
             "Material transpirable",
+            "Tecnología climacool",
             "Diseño moderno",
             "Colores tradicionales",
             "Uso deportivo o casual",
@@ -153,18 +155,18 @@ function showSection(sectionId) {
         }
     });
 
-    // Cerrar carrito si se navega
-    const cartOverlay = document.getElementById('cart-overlay');
-    if (cartOverlay.classList.contains('active')) {
-        toggleCart();
-    }
+// Cerrar carrito si se navega
+const cartOverlay = document.getElementById('cart-overlay');
+if (cartOverlay && cartOverlay.classList.contains('active')) {
+    toggleCart();
+}
 
-    // Cerrar checkout si se navega
-    const checkoutForm = document.getElementById('checkout-form');
-    if (!checkoutForm.classList.contains('hidden')) {
-        hideCheckout();
-    }
+// Cerrar checkout si se navega
 
+const checkoutForm = document.getElementById('checkout-form');
+if(checkoutForm && checkoutForm.classList.contains('active')){
+    hideCheckout();
+}
     // Scroll al inicio
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -248,11 +250,13 @@ window.onclick = function(event) {
 /* =========================================
    CARRITO DE COMPRAS
    ========================================= */
+
 function addToCart(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
     const existingItem = cart.find(item => item.id === productId);
+
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
@@ -282,18 +286,16 @@ function updateCartUI() {
     const cartSubtotalPrice = document.getElementById('cart-subtotal-price');
     const cartShippingPrice = document.getElementById('cart-shipping-price');
     const cartTotalPrice = document.getElementById('cart-total-price');
-    
-    // Actualizar contador
+
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     cartCount.textContent = totalItems;
 
-    // Calcular totales
     let subtotal = 0;
+
     cart.forEach(item => {
         subtotal += item.newPrice * item.quantity;
     });
 
-    // Envío gratis si supera $120.000
     if (subtotal >= 120000) {
         currentShippingCost = 0;
         cartShippingPrice.textContent = 'GRATIS';
@@ -304,28 +306,29 @@ function updateCartUI() {
 
     const total = subtotal + currentShippingCost;
 
-    // Actualizar lista
     cartItemsContainer.innerHTML = '';
-    
+
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = `
-            <p class="empty-cart-msg">
-                <i class="fas fa-shopping-basket"></i>
+            <div class="empty-cart-msg" style="text-align:center;padding:30px;">
+                <i class="fas fa-shopping-basket" style="font-size:2rem;"></i>
                 <p>Tu carrito está vacío.</p>
-            </p>
+            </div>
         `;
     } else {
         cart.forEach(item => {
             const itemTotal = item.newPrice * item.quantity;
-            subtotal += itemTotal;
 
             const itemDiv = document.createElement('div');
             itemDiv.style.padding = '15px';
             itemDiv.style.borderBottom = '1px solid #eee';
+
             itemDiv.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; gap:15px; align-items:center;">
-                        <img src="${item.images[0]}" alt="${item.name}" style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
+                        <img src="${item.images[0]}" 
+                        alt="${item.name}" 
+                        style="width:60px;height:60px;object-fit:cover;border-radius:4px;">
                         <div>
                             <strong>${item.name}</strong><br>
                             <small>Cant: ${item.quantity}</small><br>
@@ -333,13 +336,18 @@ function updateCartUI() {
                         </div>
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-weight:bold;">${formatPrice(itemTotal)}</div>
-                        <button onclick="removeFromCart(${item.id})" style="color:red; border:none; background:none; cursor:pointer; font-size:0.8rem;">
+                        <div style="font-weight:bold;">
+                            ${formatPrice(itemTotal)}
+                        </div>
+                        <button 
+                        onclick="removeFromCart(${item.id})"
+                        style="color:red;border:none;background:none;cursor:pointer;font-size:0.8rem;">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>
                     </div>
                 </div>
             `;
+
             cartItemsContainer.appendChild(itemDiv);
         });
     }
@@ -350,11 +358,14 @@ function updateCartUI() {
 
 function toggleCart() {
     const cartOverlay = document.getElementById('cart-overlay');
+    if (!cartOverlay) return;
+
     cartOverlay.classList.toggle('active');
-    
-    // Si se abre el checkout, ocultar carrito
+
     const checkoutForm = document.getElementById('checkout-form');
-    if (checkoutForm.classList.contains('hidden') === false) {
+
+    // Si el checkout está abierto, cerrarlo
+    if (checkoutForm && checkoutForm.classList.contains('active')) {
         hideCheckout();
     }
 }
@@ -362,33 +373,47 @@ function toggleCart() {
 /* =========================================
    CHECKOUT
    ========================================= */
+
 function showCheckout() {
-    if (cart.length === 0) {
+    if (!cart || cart.length === 0) {
         showToast('Tu carrito está vacío', 'error');
         return;
     }
 
-    const cartOverlay = document.getElementById('cart-overlay');
     const checkoutForm = document.getElementById('checkout-form');
-    
-    // Ocultar lista de items, mostrar formulario
-    document.getElementById('cart-items-container').style.display = 'none';
-    document.getElementById('cart-footer').style.display = 'none';
-    
-    checkoutForm.classList.remove('hidden');
-    checkoutForm.style.display = 'block';
+    const cartItems = document.getElementById('cart-items-container');
+    const cartFooter = document.getElementById('cart-footer');
 
-    // Actualizar resumen
+    if (!checkoutForm) {
+        console.error("checkout-form no existe en el HTML");
+        return;
+    }
+
+    // Ocultar carrito
+    if (cartItems) cartItems.style.display = 'none';
+    if (cartFooter) cartFooter.style.display = 'none';
+
+    // Mostrar checkout
+    checkoutForm.classList.add('active');
+    checkoutForm.style.display = 'flex';
+
     updateCheckoutSummary();
 }
 
 function hideCheckout() {
     const checkoutForm = document.getElementById('checkout-form');
-    checkoutForm.classList.add('hidden');
+    const cartItems = document.getElementById('cart-items-container');
+    const cartFooter = document.getElementById('cart-footer');
+
+    if (!checkoutForm) return;
+
+    // Ocultar checkout
+    checkoutForm.classList.remove('active');
     checkoutForm.style.display = 'none';
 
-    document.getElementById('cart-items-container').style.display = 'block';
-    document.getElementById('cart-footer').style.display = 'block';
+    // Volver a mostrar carrito
+    if (cartItems) cartItems.style.display = 'block';
+    if (cartFooter) cartFooter.style.display = 'block';
 }
 
 function updateCheckoutSummary() {
@@ -396,32 +421,50 @@ function updateCheckoutSummary() {
     const checkoutSubtotal = document.getElementById('checkout-subtotal');
     const checkoutShipping = document.getElementById('checkout-shipping');
     const checkoutTotal = document.getElementById('checkout-total');
-    
+
+    if (!summaryItems || !checkoutSubtotal || !checkoutShipping || !checkoutTotal) {
+        console.error("Faltan elementos del checkout en el HTML");
+        return;
+    }
+
     let summary = '';
     let subtotal = 0;
-    
+
+    if (!cart || cart.length === 0) {
+        summaryItems.innerHTML = `
+            <div style="text-align:center;padding:10px;">
+                Tu carrito está vacío
+            </div>
+        `;
+        checkoutSubtotal.textContent = '$0';
+        checkoutShipping.textContent = '$0';
+        checkoutTotal.textContent = '$0';
+        return;
+    }
+
     cart.forEach(item => {
         const itemTotal = item.newPrice * item.quantity;
         subtotal += itemTotal;
+
         summary += `
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
                 <span>${item.name} (x${item.quantity})</span>
                 <span>${formatPrice(itemTotal)}</span>
             </div>
         `;
     });
-    
+
     summaryItems.innerHTML = summary;
     checkoutSubtotal.textContent = formatPrice(subtotal);
-    
+
     if (subtotal >= 120000) {
-        checkoutShipping.textContent = 'GRATIS';
         currentShippingCost = 0;
+        checkoutShipping.textContent = 'GRATIS';
     } else {
-        checkoutShipping.textContent = '$5.000';
         currentShippingCost = 5000;
+        checkoutShipping.textContent = '$5.000';
     }
-    
+
     const total = subtotal + currentShippingCost;
     checkoutTotal.textContent = formatPrice(total);
 }
@@ -449,6 +492,7 @@ function wishlistToggleFromModal() {
 /* =========================================
    FORMULARIOS
    ========================================= */
+
 // Newsletter
 document.getElementById('newsletter-form-el').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -457,7 +501,7 @@ document.getElementById('newsletter-form-el').addEventListener('submit', functio
     this.reset();
 });
 
-// Checkout
+// Checkout (CORREGIDO)
 document.getElementById('checkout-form-el').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -468,27 +512,20 @@ document.getElementById('checkout-form-el').addEventListener('submit', function(
         return;
     }
     
-    // Simular procesamiento
-    const btn = this.querySelector('.btn-confirm-order');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-    btn.disabled = true;
+    // Validar campos requeridos
+    const name = document.getElementById('checkout-name').value;
+    const dni = document.getElementById('checkout-dni').value;
+    const phone = document.getElementById('checkout-phone').value;
+    const address = document.getElementById('checkout-address').value;
+    const neighborhood = document.getElementById('checkout-neighborhood').value;
     
-    setTimeout(() => {
-        showToast('¡Pedido realizado con éxito! Te enviaremos los detalles a tu correo.', 'success');
-        
-        // Limpiar carrito
-        cart = [];
-        updateCartUI();
-        
-        // Ocultar checkout
-        hideCheckout();
-        toggleCart();
-        
-        // Resetear formulario
-        this.reset();
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar y Pagar';
-        btn.disabled = false;
-    }, 2000);
+    if(!name || !dni || !phone || !address || !neighborhood){
+        showToast("Completa todos los datos requeridos", "error");
+        return;
+    }
+    
+    // Llamar a la función de WhatsApp
+    checkoutToWhatsApp();
 });
 
 // Contacto
@@ -720,10 +757,12 @@ document.querySelectorAll('.product-card, .category-item, .review-card, .shippin
 });
 
 /* =========================================
-   CARRITO LOCAL STORAGE (OPCIONAL)
+   CARRITO LOCAL STORAGE
    ========================================= */
+
 // Guardar carrito en localStorage
 function saveCart() {
+    if (!cart) return;
     localStorage.setItem('modovar_cart', JSON.stringify(cart));
 }
 
@@ -731,21 +770,32 @@ function saveCart() {
 function loadCart() {
     const savedCart = localStorage.getItem('modovar_cart');
     if (savedCart) {
-        cart = JSON.parse(savedCart);
-        updateCartUI();
+        try {
+            cart = JSON.parse(savedCart);
+        } catch (error) {
+            console.error("Error cargando carrito:", error);
+            cart = [];
+        }
     }
+    if (!Array.isArray(cart)) {
+        cart = [];
+    }
+    updateCartUI();
 }
 
-// Cargar carrito al iniciar
-loadCart();
+// Esperar a que cargue el DOM
+document.addEventListener("DOMContentLoaded", () => {
+    loadCart();
+});
 
-// Guardar carrito cada vez que se actualiza
+// Guardar carrito cada vez que se agrega producto
 const originalAddToCart = addToCart;
 addToCart = function(productId) {
     originalAddToCart(productId);
     saveCart();
 };
 
+// Guardar carrito cuando se elimina producto
 const originalRemoveFromCart = removeFromCart;
 removeFromCart = function(productId) {
     originalRemoveFromCart(productId);
@@ -755,11 +805,10 @@ removeFromCart = function(productId) {
 /* =========================================
    INICIALIZACIÓN
    ========================================= */
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Modo Var - Tienda Online Iniciada');
-    console.log(`Productos cargados: ${products.length}`);
-    console.log(`Carrito inicial: ${cart.length} items`);
-});
+
+console.log('Modo Var - Tienda Online Iniciada');
+console.log(`Productos cargados: ${products.length}`);
+console.log(`Carrito inicial: ${cart.length} items`);
 
 /* =========================================
    MANEJO DE ERRORES
@@ -771,6 +820,7 @@ window.addEventListener('error', (e) => {
 /* =========================================
    FUNCIONES EXTRA
    ========================================= */
+
 function getCartTotal() {
     let total = 0;
     cart.forEach(item => {
@@ -786,13 +836,17 @@ function getCartItemCount() {
 function clearCart() {
     cart = [];
     updateCartUI();
-    saveCart();
 }
 
+// abrir checkout desde botón externo
 function checkout() {
-    if (cart.length === 0) {
+    if (!cart || cart.length === 0) {
         showToast('Tu carrito está vacío', 'error');
         return;
+    }
+    const cartOverlay = document.getElementById('cart-overlay');
+    if (cartOverlay && !cartOverlay.classList.contains('active')) {
+        cartOverlay.classList.add('active');
     }
     showCheckout();
 }
@@ -800,7 +854,6 @@ function checkout() {
 // Exportar funciones para uso global
 window.ModoVar = {
     products,
-    cart,
     wishlist,
     addToCart,
     removeFromCart,
@@ -822,4 +875,113 @@ window.ModoVar = {
 document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflowY = "auto";
     document.body.style.overflowX = "hidden";
+    if (typeof loadCart === "function") {
+        loadCart();
+    }
 });
+
+/* =========================================================
+   INICIALIZACIÓN
+========================================================= */
+
+function generateOrderNumber(){
+    return "MV-" + Date.now().toString().slice(-8);
+}
+
+function checkoutToWhatsApp(){
+    // Validar carrito
+    if(!window.ModoVar.cart || window.ModoVar.cart.length === 0){
+        showToast("El carrito está vacío","error");
+        return;
+    }
+
+    // Validar campos requeridos
+    const name = document.getElementById("checkout-name").value;
+    const dni = document.getElementById("checkout-dni").value;
+    const phone = document.getElementById("checkout-phone").value;
+    const address = document.getElementById("checkout-address").value;
+    const neighborhood = document.getElementById("checkout-neighborhood").value;
+
+    if(!name || !dni || !phone || !address || !neighborhood){
+        showToast("Completa todos los datos requeridos","error");
+        return;
+    }
+
+    const orderNumber = generateOrderNumber();
+
+    let message = `
+✅ *Pedido Confirmado*
+🛒 Nº Orden: ${orderNumber}
+
+👤 Cliente: ${name}
+📌 DNI: ${dni}
+📞 Teléfono: ${phone}
+
+🏠 Dirección: ${address}
+🏘 Barrio: ${neighborhood}
+
+📦 Productos:
+`;
+
+    let total = 0;
+
+    window.ModoVar.cart.forEach(item=>{
+        let itemTotal = item.newPrice * item.quantity;
+        total += itemTotal;
+
+        message += `
+- ${item.name} x${item.quantity}
+  ${formatPrice(itemTotal)}
+`;
+    });
+
+    message += `
+💰 Total: ${formatPrice(total)}
+
+📲 Escríbenos para coordinar el pago y envío.
+`;
+
+    const whatsappNumber = "5491154733455";
+
+    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+    window.open(url, "_blank");
+
+    // Guardar orden
+    const orders = JSON.parse(localStorage.getItem("modovar_orders")) || [];
+
+    orders.push({
+        orderNumber,
+        customer:{
+            name,
+            dni,
+            phone,
+            address,
+            neighborhood
+        },
+        items: window.ModoVar.cart,
+        total,
+        date: new Date().toLocaleString(),
+        status: "Pendiente"
+    });
+
+    localStorage.setItem("modovar_orders", JSON.stringify(orders));
+
+    // Limpiar carrito
+    window.ModoVar.cart = [];
+    updateCartUI();
+    saveCart();
+
+    showToast("Pedido generado correctamente", "success");
+
+    setTimeout(()=>{
+        window.location.href = url;
+    }, 1500);
+}
+
+// Asegurar que checkoutToWhatsApp esté disponible globalmente
+window.checkoutToWhatsApp = checkoutToWhatsApp;
+
+/* =========================================================
+   FIN DEL ARCHIVO
+========================================================= */
