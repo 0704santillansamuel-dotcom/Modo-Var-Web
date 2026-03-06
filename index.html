@@ -40,43 +40,43 @@
         </div>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo-container" onclick="showSection('inicio')">
-                <img src="imagenes/Logo.png" alt="Modo Var" class="navbar-logo">
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="logo-container" onclick="showSection('inicio')">
+            <img src="imagenes/Logo.png" alt="Modo Var" class="navbar-logo">
+        </div>
+        
+        <ul class="nav-links">
+            <li><a href="#" onclick="showSection('inicio')" class="nav-link active">Inicio</a></li>
+            <li><a href="#" onclick="showSection('destacados')" class="nav-link">Destacados</a></li>
+            <li><a href="#" onclick="showSection('categorias')" class="nav-link">Categorías</a></li>
+            <li><a href="#" onclick="showSection('resenas')" class="nav-link">Reseñas</a></li>
+            <li><a href="#" onclick="showSection('envios')" class="nav-link">Envíos</a></li>
+            <li><a href="#" onclick="showSection('pagos')" class="nav-link">Pagos</a></li>
+            <li><a href="#" onclick="showSection('faq')" class="nav-link">FAQ</a></li>
+            <li><a href="#" onclick="showSection('contacto')" class="nav-link">Contacto</a></li>
+        </ul>
+        
+        <div class="nav-icons">
+            <div class="search-icon">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Buscar..." class="search-input">
             </div>
-            
-            <ul class="nav-links">
-                <li><a href="#" onclick="showSection('inicio')" class="nav-link active">Inicio</a></li>
-                <li><a href="#" onclick="showSection('destacados')" class="nav-link">Destacados</a></li>
-                <li><a href="#" onclick="showSection('categorias')" class="nav-link">Categorías</a></li>
-                <li><a href="#" onclick="showSection('resenas')" class="nav-link">Reseñas</a></li>
-                <li><a href="#" onclick="showSection('envios')" class="nav-link">Envíos</a></li>
-                <li><a href="#" onclick="showSection('pagos')" class="nav-link">Pagos</a></li>
-                <li><a href="#" onclick="showSection('faq')" class="nav-link">FAQ</a></li>
-                <li><a href="#" onclick="showSection('contacto')" class="nav-link">Contacto</a></li>
-            </ul>
-            
-            <div class="nav-icons">
-                <div class="search-icon">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Buscar..." class="search-input">
-                </div>
-                <div class="cart-icon" onclick="toggleCart()">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span id="cart-count">0</span>
-                </div>
-                <div class="user-icon">
-                    <i class="fas fa-user"></i>
-                </div>
+            <div class="cart-icon" onclick="toggleCart()">
+                <i class="fas fa-shopping-cart"></i>
+                <span id="cart-count">0</span>
             </div>
-            
-            <div class="mobile-menu-btn" onclick="toggleMobileMenu()">
-                <i class="fas fa-bars"></i>
+            <div class="user-icon" onclick="openAuthModal()">
+                <i class="fas fa-user"></i>
             </div>
         </div>
-    </nav>
+        
+        <div class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+</nav>
 
     <!-- CONTENEDOR PRINCIPAL -->
     <main id="main-content">
@@ -850,6 +850,103 @@
         </div>
     </section>
 
+<!-- =========================================
+   MODAL DE AUTENTICACIÓN
+   ========================================= -->
+<div id="auth-modal" class="modal">
+    <div class="modal-content auth-modal-content">
+        <span class="close-modal" onclick="closeAuthModal()">&times;</span>
+        
+        <!-- Pestañas -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchAuthTab('login')">Iniciar Sesión</button>
+            <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
+        </div>
+        
+        <!-- Formulario Login -->
+        <form id="login-form" class="auth-form">
+            <h3>Iniciar Sesión</h3>
+            <input type="text" id="login-username" placeholder="Usuario" required>
+            <input type="password" id="login-password" placeholder="Contraseña" required>
+            <button type="submit" class="btn-auth">Ingresar</button>
+            <p class="auth-switch">¿No tienes cuenta? <a href="#" onclick="switchAuthTab('register')">Regístrate</a></p>
+        </form>
+        
+        <!-- Formulario Registro -->
+        <form id="register-form" class="auth-form" style="display:none;">
+            <h3>Registrarse</h3>
+            <input type="text" id="register-username" placeholder="Usuario" required>
+            <input type="password" id="register-password" placeholder="Contraseña" required>
+            <input type="password" id="register-confirm" placeholder="Confirmar Contraseña" required>
+            <button type="submit" class="btn-auth">Registrarse</button>
+            <p class="auth-switch">¿Ya tienes cuenta? <a href="#" onclick="switchAuthTab('login')">Inicia Sesión</a></p>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================
+   MODAL DE PANEL DE ADMINISTRADOR
+   ========================================= -->
+<div id="admin-panel" class="modal">
+    <div class="modal-content admin-panel-content">
+        <span class="close-modal" onclick="closeAdminPanel()">&times;</span>
+        <div class="admin-header">
+            <img src="imagenes/Logo.png" alt="Modo Var" class="admin-logo">
+            <h2>Panel de Administración</h2>
+        </div>
+        
+        <div class="admin-nav">
+            <button class="admin-nav-btn active" onclick="showAdminSection('products')">
+                <i class="fas fa-box"></i> Productos
+            </button>
+            <button class="admin-nav-btn" onclick="showAdminSection('orders')">
+                <i class="fas fa-shopping-cart"></i> Ventas
+            </button>
+            <button class="admin-nav-btn" onclick="showAdminSection('users')">
+                <i class="fas fa-users"></i> Usuarios
+            </button>
+        </div>
+        
+        <div class="admin-content">
+            <!-- Sección Productos -->
+            <div id="admin-products" class="admin-section">
+                <h3>Gestión de Productos</h3>
+                <form id="admin-add-product" class="admin-form">
+                    <input type="text" id="admin-product-name" placeholder="Nombre del producto" required>
+                    <input type="number" id="admin-product-price" placeholder="Precio" required>
+                    <input type="text" id="admin-product-image" placeholder="URL de imagen" required>
+                    <textarea id="admin-product-desc" placeholder="Descripción" required></textarea>
+                    <button type="submit" class="btn-admin">Agregar Producto</button>
+                </form>
+                <div id="admin-products-list" class="admin-products-list"></div>
+            </div>
+            
+            <!-- Sección Ventas -->
+            <div id="admin-orders" class="admin-section" style="display:none;">
+                <h3>Historial de Ventas</h3>
+                <div id="admin-orders-list" class="admin-orders-list"></div>
+            </div>
+            
+            <!-- Sección Usuarios -->
+            <div id="admin-users" class="admin-section" style="display:none;">
+                <h3>Usuarios Registrados</h3>
+                <div id="admin-users-list" class="admin-users-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================
+   MODAL DE HISTORIAL DE COMPRAS (USUARIO NORMAL)
+   ========================================= -->
+<div id="user-orders-modal" class="modal">
+    <div class="modal-content user-orders-modal">
+        <span class="close-modal" onclick="closeUserOrdersModal()">&times;</span>
+        <h3>Mi Historial de Compras</h3>
+        <div id="user-orders-list" class="user-orders-list"></div>
+    </div>
+</div>
+
     <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-container">
@@ -1254,3 +1351,5 @@ CHECKOUT (SUPERPUESTO AL CARRITO)
 <script src="app.js"></script>
 </body>
 </html>
+
+

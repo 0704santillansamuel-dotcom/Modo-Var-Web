@@ -889,8 +889,8 @@ function generateOrderNumber(){
 }
 
 function checkoutToWhatsApp(){
-    // Validar carrito
-    if(!window.ModoVar.cart || window.ModoVar.cart.length === 0){
+    // Validar carrito (CORREGIDO: Usamos 'cart' global)
+    if(!cart || cart.length === 0){
         showToast("El carrito está vacío","error");
         return;
     }
@@ -925,7 +925,8 @@ function checkoutToWhatsApp(){
 
     let total = 0;
 
-    window.ModoVar.cart.forEach(item=>{
+    // CORREGIDO: Usamos 'cart' global en lugar de window.ModoVar.cart
+    cart.forEach(item=>{
         let itemTotal = item.newPrice * item.quantity;
         total += itemTotal;
 
@@ -959,7 +960,7 @@ function checkoutToWhatsApp(){
             address,
             neighborhood
         },
-        items: window.ModoVar.cart,
+        items: cart, // CORREGIDO: Usamos 'cart' global
         total,
         date: new Date().toLocaleString(),
         status: "Pendiente"
@@ -967,8 +968,8 @@ function checkoutToWhatsApp(){
 
     localStorage.setItem("modovar_orders", JSON.stringify(orders));
 
-    // Limpiar carrito
-    window.ModoVar.cart = [];
+    // Limpiar carrito (CORREGIDO: Usamos 'cart' global)
+    cart = [];
     updateCartUI();
     saveCart();
 
@@ -985,3 +986,403 @@ window.checkoutToWhatsApp = checkoutToWhatsApp;
 /* =========================================================
    FIN DEL ARCHIVO
 ========================================================= */
+
+/* =========================================
+   SISTEMA DE AUTENTICACIÓN
+   ========================================= */
+
+// Variables globales
+let currentUser = null;
+let users = JSON.parse(localStorage.getItem('modovar_users')) || [];
+let orders = JSON.parse(localStorage.getItem('modovar_orders')) || [];
+const savedProducts = JSON.parse(localStorage.getItem('modovar_products'));
+if (savedProducts) {
+    products.length = 0;
+    products.push(...savedProducts);
+}
+
+// Cargar sesión al iniciar
+document.addEventListener("DOMContentLoaded", () => {
+    loadSession();
+    updateAuthUI();
+});
+
+// Cargar sesión desde localStorage
+function loadSession() {
+    const savedUser = localStorage.getItem('modovar_current_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        updateAuthUI();
+    }
+}
+
+// Guardar sesión en localStorage
+function saveSession() {
+    if (currentUser) {
+        localStorage.setItem('modovar_current_user', JSON.stringify(currentUser));
+    } else {
+        localStorage.removeItem('modovar_current_user');
+    }
+}
+
+// Actualizar UI del usuario
+function updateAuthUI() {
+    const userStatus = document.getElementById('user-status');
+    if (currentUser) {
+        userStatus.textContent = currentUser.role === 'admin' ? 'ADMIN' : 'LOGUEADO';
+        userStatus.style.display = 'inline-block';
+    } else {
+        userStatus.textContent = '';
+        userStatus.style.display = 'none';
+    }
+}
+
+// Abrir modal de autenticación
+function openAuthModal() {
+    if (currentUser) {
+        if (currentUser.role === 'admin') {
+            openAdminPanel();
+        } else {
+            openUserOrdersModal();
+        }
+    } else {
+        document.getElementById('auth-modal').style.display = 'flex';
+    }
+}
+
+// Cerrar modal de autenticación
+function closeAuthModal() {
+    document.getElementById('auth-modal').style.display = 'none';
+}
+
+// Abrir panel de administración
+function openAdminPanel() {
+    document.getElementById('admin-panel').style.display = 'flex';
+    loadAdminProducts();
+    loadAdminOrders();
+    loadAdminUsers();
+}
+
+// Cerrar panel de administración
+function closeAdminPanel() {
+    document.getElementById('admin-panel').style.display = 'none';
+}
+
+// Abrir modal de historial de compras
+function openUserOrdersModal() {
+    document.getElementById('user-orders-modal').style.display = 'flex';
+    loadUserOrders();
+}
+
+// Cerrar modal de historial de compras
+function closeUserOrdersModal() {
+    document.getElementById('user-orders-modal').style.display = 'none';
+}
+
+// Cambiar entre pestañas de autenticación
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(tabBtn => {
+        tabBtn.classList.remove('active');
+    });
+    document.querySelectorAll('.auth-form').forEach(form => {
+        form.style.display = 'none';
+    });
+    
+    if (tab === 'login') {
+        document.querySelector('.auth-tab:first-child').classList.add('active');
+        document.getElementById('login-form').style.display = 'flex';
+    } else {
+        document.querySelector('.auth-tab:last-child').classList.add('active');
+        document.getElementById('register-form').style.display = 'flex';
+    }
+}
+
+// Registrar usuario
+function registerUser(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('register-username').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirm = document.getElementById('register-confirm').value;
+    
+    if (password !== confirm) {
+        showToast('Las contraseñas no coinciden', 'error');
+        return;
+    }
+    
+    if (users.find(u => u.username === username)) {
+        showToast('El usuario ya existe', 'error');
+        return;
+    }
+    
+    const newUser = {
+        id: Date.now(),
+        username: username,
+        password: password,
+        role: 'user',
+        createdAt: new Date().toISOString()
+    };
+    
+    users.push(newUser);
+    localStorage.setItem('modovar_users', JSON.stringify(users));
+    
+    showToast('Usuario registrado con éxito', 'success');
+    document.getElementById('register-form').reset();
+    switchAuthTab('login');
+}
+
+// Iniciar sesión
+function loginUser(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    
+    const user = users.find(u => u.username === username && u.password === password);
+    
+    if (!user) {
+        showToast('Usuario o contraseña incorrectos', 'error');
+        return;
+    }
+    
+    currentUser = user;
+    saveSession();
+    updateAuthUI();
+    showToast(`¡Bienvenido ${user.username}!`, 'success');
+    closeAuthModal();
+}
+
+// Cerrar sesión
+function logoutUser() {
+    currentUser = null;
+    saveSession();
+    updateAuthUI();
+    showToast('Sesión cerrada', 'info');
+}
+
+// Cargar pedidos de usuario
+function loadUserOrders() {
+    const userOrders = orders.filter(o => o.userId === currentUser.id);
+    const ordersList = document.getElementById('user-orders-list');
+    
+    if (userOrders.length === 0) {
+        ordersList.innerHTML = '<p style="text-align:center;padding:20px;">No tienes compras registradas</p>';
+        return;
+    }
+    
+    ordersList.innerHTML = '';
+    userOrders.forEach(order => {
+        const orderItem = document.createElement('div');
+        orderItem.className = 'user-order-item';
+        orderItem.innerHTML = `
+            <h4>Orden: ${order.orderNumber}</h4>
+            <p class="order-date">Fecha: ${new Date(order.date).toLocaleDateString()}</p>
+            <p>Productos: ${order.items.length}</p>
+            <p class="order-total">Total: ${formatPrice(order.total)}</p>
+        `;
+        ordersList.appendChild(orderItem);
+    });
+}
+
+// Cargar productos para admin
+function loadAdminProducts() {
+    const productsList = document.getElementById('admin-products-list');
+    
+    if (products.length === 0) {
+        productsList.innerHTML = '<p>No hay productos registrados</p>';
+        return;
+    }
+    
+    productsList.innerHTML = '';
+    products.forEach(product => {
+        const productItem = document.createElement('div');
+        productItem.className = 'admin-item';
+        productItem.innerHTML = `
+            <div class="admin-item-info">
+                <h4>${product.name}</h4>
+                <p>Precio: ${formatPrice(product.newPrice)}</p>
+                <p>ID: ${product.id}</p>
+            </div>
+            <div class="admin-item-actions">
+                <button class="btn-edit" onclick="editProduct(${product.id})">Editar</button>
+                <button class="btn-delete" onclick="deleteProduct(${product.id})">Eliminar</button>
+            </div>
+        `;
+        productsList.appendChild(productItem);
+    });
+}
+
+// Agregar producto (admin)
+function addProduct(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('admin-product-name').value.trim();
+    const price = parseFloat(document.getElementById('admin-product-price').value);
+    const image = document.getElementById('admin-product-image').value.trim();
+    const desc = document.getElementById('admin-product-desc').value.trim();
+    
+    if (!name || !price || !image || !desc) {
+        showToast('Completa todos los campos', 'error');
+        return;
+    }
+    
+    const newProduct = {
+        id: Date.now(),
+        name: name,
+        oldPrice: price * 1.5,
+        newPrice: price,
+        shortDesc: desc,
+        fullDesc: desc,
+        images: [image],
+        features: ['Nuevo producto'],
+        rating: 0,
+        reviews: 0
+    };
+    
+    products.push(newProduct);
+    localStorage.setItem('modovar_products', JSON.stringify(products));
+    
+    showToast('Producto agregado con éxito', 'success');
+    document.getElementById('admin-add-product').reset();
+    loadAdminProducts();
+}
+
+// Editar producto (admin)
+function editProduct(id) {
+    const product = products.find(p => p.id === id);
+    if (product) {
+        const newName = prompt('Nuevo nombre:', product.name);
+        const newPrice = prompt('Nuevo precio:', product.newPrice);
+        
+        if (newName && newPrice) {
+            product.name = newName;
+            product.newPrice = parseFloat(newPrice);
+            localStorage.setItem('modovar_products', JSON.stringify(products));
+            loadAdminProducts();
+            showToast('Producto actualizado', 'success');
+        }
+    }
+}
+
+// Eliminar producto (admin)
+function deleteProduct(id) {
+    if (confirm('¿Estás seguro de eliminar este producto?')) {
+        products = products.filter(p => p.id !== id);
+        localStorage.setItem('modovar_products', JSON.stringify(products));
+        loadAdminProducts();
+        showToast('Producto eliminado', 'success');
+    }
+}
+
+// Cargar pedidos para admin
+function loadAdminOrders() {
+    const ordersList = document.getElementById('admin-orders-list');
+    
+    if (orders.length === 0) {
+        ordersList.innerHTML = '<p>No hay pedidos registrados</p>';
+        return;
+    }
+    
+    ordersList.innerHTML = '';
+    orders.forEach(order => {
+        const orderItem = document.createElement('div');
+        orderItem.className = 'admin-item';
+        orderItem.innerHTML = `
+            <div class="admin-item-info">
+                <h4>Orden: ${order.orderNumber}</h4>
+                <p>Cliente: ${order.customer.name}</p>
+                <p>Fecha: ${new Date(order.date).toLocaleDateString()}</p>
+                <p>Total: ${formatPrice(order.total)}</p>
+            </div>
+            <div class="admin-item-actions">
+                <button class="btn-edit" onclick="viewOrderDetails('${order.orderNumber}')">Ver detalles</button>
+            </div>
+        `;
+        ordersList.appendChild(orderItem);
+    });
+}
+
+// Ver detalles de pedido
+function viewOrderDetails(orderNumber) {
+    const order = orders.find(o => o.orderNumber === orderNumber);
+    if (order) {
+        let message = `Orden: ${order.orderNumber}\n\n`;
+        message += `Cliente: ${order.customer.name}\n`;
+        message += `Fecha: ${new Date(order.date).toLocaleDateString()}\n`;
+        message += `Total: ${formatPrice(order.total)}\n\n`;
+        message += `Productos:\n`;
+        order.items.forEach(item => {
+            message += `- ${item.name} x${item.quantity} - ${formatPrice(item.newPrice * item.quantity)}\n`;
+        });
+        alert(message);
+    }
+}
+
+// Cargar usuarios para admin
+function loadAdminUsers() {
+    const usersList = document.getElementById('admin-users-list');
+    
+    if (users.length === 0) {
+        usersList.innerHTML = '<p>No hay usuarios registrados</p>';
+        return;
+    }
+    
+    usersList.innerHTML = '';
+    users.forEach(user => {
+        const userItem = document.createElement('div');
+        userItem.className = 'admin-item';
+        userItem.innerHTML = `
+            <div class="admin-item-info">
+                <h4>${user.username}</h4>
+                <p>Rol: ${user.role}</p>
+                <p>Registrado: ${new Date(user.createdAt).toLocaleDateString()}</p>
+            </div>
+            <div class="admin-item-actions">
+                <button class="btn-delete" onclick="deleteUser(${user.id})">Eliminar</button>
+            </div>
+        `;
+        usersList.appendChild(userItem);
+    });
+}
+
+// Eliminar usuario (admin)
+function deleteUser(id) {
+    if (confirm('¿Estás seguro de eliminar este usuario?')) {
+        users = users.filter(u => u.id !== id);
+        localStorage.setItem('modovar_users', JSON.stringify(users));
+        loadAdminUsers();
+        showToast('Usuario eliminado', 'success');
+    }
+}
+
+// Mostrar sección del admin
+function showAdminSection(section) {
+    document.querySelectorAll('.admin-section').forEach(sec => {
+        sec.style.display = 'none';
+    });
+    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    document.getElementById(`admin-${section}`).style.display = 'block';
+    event.target.classList.add('active');
+}
+
+// Agregar event listeners a los formularios
+document.addEventListener("DOMContentLoaded", () => {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const adminAddProduct = document.getElementById('admin-add-product');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', loginUser);
+    }
+    
+    if (registerForm) {
+        registerForm.addEventListener('submit', registerUser);
+    }
+    
+    if (adminAddProduct) {
+        adminAddProduct.addEventListener('submit', addProduct);
+    }
+});
