@@ -889,8 +889,8 @@ function generateOrderNumber(){
 }
 
 function checkoutToWhatsApp(){
-    // Validar carrito
-    if(!window.ModoVar.cart || window.ModoVar.cart.length === 0){
+    // Validar carrito (CORREGIDO: Usamos 'cart' global)
+    if(!cart || cart.length === 0){
         showToast("El carrito está vacío","error");
         return;
     }
@@ -925,7 +925,8 @@ function checkoutToWhatsApp(){
 
     let total = 0;
 
-    window.ModoVar.cart.forEach(item=>{
+    // CORREGIDO: Usamos 'cart' global en lugar de window.ModoVar.cart
+    cart.forEach(item=>{
         let itemTotal = item.newPrice * item.quantity;
         total += itemTotal;
 
@@ -959,7 +960,7 @@ function checkoutToWhatsApp(){
             address,
             neighborhood
         },
-        items: window.ModoVar.cart,
+        items: cart, // CORREGIDO: Usamos 'cart' global
         total,
         date: new Date().toLocaleString(),
         status: "Pendiente"
@@ -967,8 +968,8 @@ function checkoutToWhatsApp(){
 
     localStorage.setItem("modovar_orders", JSON.stringify(orders));
 
-    // Limpiar carrito
-    window.ModoVar.cart = [];
+    // Limpiar carrito (CORREGIDO: Usamos 'cart' global)
+    cart = [];
     updateCartUI();
     saveCart();
 
