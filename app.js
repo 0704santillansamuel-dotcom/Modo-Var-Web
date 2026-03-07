@@ -994,13 +994,28 @@ window.checkoutToWhatsApp = checkoutToWhatsApp;
 // Variables globales
 let currentUser = null;
 let users = JSON.parse(localStorage.getItem('modovar_users')) || [];
+
+// Agregar usuario admin predefinido (Matias)
+const adminUser = {
+    id: 1,
+    username: 'Matias',
+    password: 'Matias840',
+    role: 'admin',
+    createdAt: new Date().toISOString()
+};
+
+// Si no hay usuarios o no existe Matias, lo agregamos
+if (users.length === 0 || !users.find(u => u.username === 'Matias')) {
+    users.push(adminUser);
+    localStorage.setItem('modovar_users', JSON.stringify(users));
+}
+
 let orders = JSON.parse(localStorage.getItem('modovar_orders')) || [];
 const savedProducts = JSON.parse(localStorage.getItem('modovar_products'));
 if (savedProducts) {
     products.length = 0;
     products.push(...savedProducts);
 }
-
 // Cargar sesión al iniciar
 document.addEventListener("DOMContentLoaded", () => {
     loadSession();
