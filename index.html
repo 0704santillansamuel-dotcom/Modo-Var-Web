@@ -67,7 +67,7 @@
                 <i class="fas fa-shopping-cart"></i>
                 <span id="cart-count">0</span>
             </div>
-            <div class="user-icon" onclick="openAuthModal()">
+            <div class="user-icon" onclick="app.openAuthModal()">            
                 <i class="fas fa-user"></i>
             </div>
         </div>
@@ -855,31 +855,48 @@
    ========================================= -->
 <div id="auth-modal" class="modal">
     <div class="modal-content auth-modal-content">
-        <span class="close-modal" onclick="closeAuthModal()">&times;</span>
+        <span class="close-modal" onclick="app.closeAuthModal()">&times;</span>
         
-        <!-- Pestañas -->
+        <!-- Pestañas de Navegación -->
         <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchAuthTab('login')">Iniciar Sesión</button>
-            <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
+            <button class="auth-tab active" onclick="app.switchAuthTab('login')">Iniciar Sesión</button>
+            <button class="auth-tab" onclick="app.switchAuthTab('register')">Registrarse</button>
         </div>
         
         <!-- Formulario Login -->
-        <form id="login-form" class="auth-form">
+        <form id="login-form" class="auth-form" onsubmit="app.handleLogin(event)">
             <h3>Iniciar Sesión</h3>
-            <input type="text" id="login-username" placeholder="Usuario" required>
-            <input type="password" id="login-password" placeholder="Contraseña" required>
+            <div class="form-group">
+                <label for="login-username">Usuario</label>
+                <input type="text" id="login-username" placeholder="Ej: admin" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Contraseña</label>
+                <input type="password" id="login-password" placeholder="Ej: 1234" required>
+            </div>
+            <div id="login-error" class="error-msg" style="display:none; color: red; font-size: 0.9rem; margin-bottom: 10px;"></div>
             <button type="submit" class="btn-auth">Ingresar</button>
-            <p class="auth-switch">¿No tienes cuenta? <a href="#" onclick="switchAuthTab('register')">Regístrate</a></p>
+            <p class="auth-switch">¿No tienes cuenta? <a href="#" onclick="app.switchAuthTab('register')">Regístrate</a></p>
         </form>
         
         <!-- Formulario Registro -->
-        <form id="register-form" class="auth-form" style="display:none;">
+        <form id="register-form" class="auth-form" style="display:none;" onsubmit="app.handleRegister(event)">
             <h3>Registrarse</h3>
-            <input type="text" id="register-username" placeholder="Usuario" required>
-            <input type="password" id="register-password" placeholder="Contraseña" required>
-            <input type="password" id="register-confirm" placeholder="Confirmar Contraseña" required>
+            <div class="form-group">
+                <label for="register-username">Usuario</label>
+                <input type="text" id="register-username" placeholder="Elige un usuario" required>
+            </div>
+            <div class="form-group">
+                <label for="register-password">Contraseña</label>
+                <input type="password" id="register-password" placeholder="Elige una contraseña" required>
+            </div>
+            <div class="form-group">
+                <label for="register-confirm">Confirmar Contraseña</label>
+                <input type="password" id="register-confirm" placeholder="Repite la contraseña" required>
+            </div>
+            <div id="register-error" class="error-msg" style="display:none; color: red; font-size: 0.9rem; margin-bottom: 10px;"></div>
             <button type="submit" class="btn-auth">Registrarse</button>
-            <p class="auth-switch">¿Ya tienes cuenta? <a href="#" onclick="switchAuthTab('login')">Inicia Sesión</a></p>
+            <p class="auth-switch">¿Ya tienes cuenta? <a href="#" onclick="app.switchAuthTab('login')">Inicia Sesión</a></p>
         </form>
     </div>
 </div>
@@ -889,50 +906,202 @@
    ========================================= -->
 <div id="admin-panel" class="modal">
     <div class="modal-content admin-panel-content">
-        <span class="close-modal" onclick="closeAdminPanel()">&times;</span>
+        <span class="close-modal" onclick="app.closeAdminPanel()">&times;</span>
+        
+        <!-- Header del Admin -->
         <div class="admin-header">
-            <img src="imagenes/Logo.png" alt="Modo Var" class="admin-logo">
-            <h2>Panel de Administración</h2>
+            <div class="admin-header-content">
+                <div class="admin-logo-container">
+                    <img src="imagenes/Logo.png" alt="Modo Var" class="admin-logo" onerror="this.style.display='none'">
+                    <h2>Panel de Administración</h2>
+                </div>
+                <div class="admin-user-info">
+                    <span id="admin-username">Admin</span>
+                    <span class="admin-badge">Administrador</span>
+                </div>
+            </div>
         </div>
         
+        <!-- Navegación del Admin -->
         <div class="admin-nav">
-            <button class="admin-nav-btn active" onclick="showAdminSection('products')">
+            <button class="admin-nav-btn active" onclick="app.showAdminSection('products')">
                 <i class="fas fa-box"></i> Productos
             </button>
-            <button class="admin-nav-btn" onclick="showAdminSection('orders')">
+            <button class="admin-nav-btn" onclick="app.showAdminSection('orders')">
                 <i class="fas fa-shopping-cart"></i> Ventas
             </button>
-            <button class="admin-nav-btn" onclick="showAdminSection('users')">
+            <button class="admin-nav-btn" onclick="app.showAdminSection('users')">
                 <i class="fas fa-users"></i> Usuarios
             </button>
         </div>
         
         <div class="admin-content">
-            <!-- Sección Productos -->
+            <!-- SECCIÓN: PRODUCTOS -->
             <div id="admin-products" class="admin-section">
-                <h3>Gestión de Productos</h3>
-                <form id="admin-add-product" class="admin-form">
-                    <input type="text" id="admin-product-name" placeholder="Nombre del producto" required>
-                    <input type="number" id="admin-product-price" placeholder="Precio" required>
-                    <input type="text" id="admin-product-image" placeholder="URL de imagen" required>
-                    <textarea id="admin-product-desc" placeholder="Descripción" required></textarea>
-                    <button type="submit" class="btn-admin">Agregar Producto</button>
+                <div class="section-header">
+                    <h3>Gestión de Productos</h3>
+                    <button class="btn btn-primary" onclick="app.resetProductForm()">
+                        <i class="fas fa-plus"></i> Nuevo Producto
+                    </button>
+                </div>
+                
+                <!-- Formulario de Producto Mejorado -->
+                <form id="admin-add-product" class="admin-form" onsubmit="app.saveProduct(event)">
+                    <input type="hidden" id="admin-prod-id"> <!-- ID oculto para edición -->
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="admin-product-name">Nombre del Producto</label>
+                            <input type="text" id="admin-product-name" placeholder="Ej: Camiseta Titular 2026" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-product-category">Categoría Principal</label>
+                            <select id="admin-product-category" required>
+                                <option value="">Seleccionar Categoría...</option>
+                                <option value="Camisetas">Camisetas</option>
+                                <option value="Remeras">Remeras</option>
+                                <option value="Botines">Botines</option>
+                                <option value="Shorts">Shorts</option>
+                                <option value="Conjuntos">Conjuntos</option>
+                                <option value="Zapatillas">Zapatillas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="admin-product-subcategory">Subcategoría</label>
+                            <select id="admin-product-subcategory" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Adulto">Adulto</option>
+                                <option value="Niño">Niño</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-product-price">Precio Normal (ARS)</label>
+                            <input type="number" id="admin-product-price" step="100" placeholder="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="admin-product-promo">Precio Promo (ARS)</label>
+                            <input type="number" id="admin-product-promo" step="100" placeholder="Opcional">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-product-sizes">Tallas (separadas por coma)</label>
+                            <input type="text" id="admin-product-sizes" value="S, M, L, XL" placeholder="S, M, L, XL">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="admin-product-short-desc">Descripción Corta</label>
+                        <input type="text" id="admin-product-short-desc" placeholder="Breve descripción para la tarjeta">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="admin-product-long-desc">Descripción Larga</label>
+                        <textarea id="admin-product-long-desc" rows="3" placeholder="Detalles completos del producto"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="admin-product-images">URLs de Imágenes (separadas por coma)</label>
+                        <input type="text" id="admin-product-images" placeholder="https://... , https://...">
+                        <small style="color: #666;">Puedes poner varias URLs para crear un carrusel.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="admin-product-shipping">
+                            <label for="admin-product-shipping">Activar Envío Gratis</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-admin">
+                        <i class="fas fa-save"></i> Guardar Producto
+                    </button>
                 </form>
-                <div id="admin-products-list" class="admin-products-list"></div>
+
+                <!-- Lista de Productos Admin -->
+                <div id="admin-products-list" class="admin-products-list">
+                    <!-- Se llena dinámicamente con JS -->
+                </div>
             </div>
             
-            <!-- Sección Ventas -->
+            <!-- SECCIÓN: VENTAS / PEDIDOS -->
             <div id="admin-orders" class="admin-section" style="display:none;">
-                <h3>Historial de Ventas</h3>
-                <div id="admin-orders-list" class="admin-orders-list"></div>
+                <div class="section-header">
+                    <h3>Historial de Ventas</h3>
+                    <button class="btn btn-secondary" onclick="app.loadAdminOrders()">
+                        <i class="fas fa-sync"></i> Actualizar
+                    </button>
+                </div>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID Pedido</th>
+                                <th>Cliente</th>
+                                <th>Total</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-orders-list">
+                            <!-- Se llena dinámicamente con JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
             
-            <!-- Sección Usuarios -->
+            <!-- SECCIÓN: USUARIOS -->
             <div id="admin-users" class="admin-section" style="display:none;">
-                <h3>Usuarios Registrados</h3>
-                <div id="admin-users-list" class="admin-users-list"></div>
+                <div class="section-header">
+                    <h3>Usuarios Registrados</h3>
+                    <button class="btn btn-secondary" onclick="app.loadAdminUsers()">
+                        <i class="fas fa-sync"></i> Actualizar
+                    </button>
+                </div>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Fecha Registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-list">
+                            <!-- Se llena dinámicamente con JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- =========================================
+   MODAL DE DETALLE DE PEDIDO (ADMIN)
+   ========================================= -->
+<div id="order-detail-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="document.getElementById('order-detail-modal').style.display='none'">&times;</span>
+        <h3>Detalles del Pedido</h3>
+        <div id="order-detail-body" style="margin: 20px 0;"></div>
+        <div class="form-group">
+            <label>Cambiar Estado del Pedido:</label>
+            <select id="order-status-select" onchange="app.updateOrderStatus()">
+                <option value="Esperando Pago">Esperando Pago</option>
+                <option value="Pago Confirmado">Pago Confirmado</option>
+                <option value="Preparando Envío">Preparando Envío</option>
+                <option value="Enviado">Enviado</option>
+                <option value="Entregado">Entregado</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 15px;" onclick="document.getElementById('order-detail-modal').style.display='none'">Cerrar</button>
     </div>
 </div>
 
@@ -941,11 +1110,14 @@
    ========================================= -->
 <div id="user-orders-modal" class="modal">
     <div class="modal-content user-orders-modal">
-        <span class="close-modal" onclick="closeUserOrdersModal()">&times;</span>
+        <span class="close-modal" onclick="app.closeUserOrdersModal()">&times;</span>
         <h3>Mi Historial de Compras</h3>
-        <div id="user-orders-list" class="user-orders-list"></div>
+        <div id="user-orders-list" class="user-orders-list">
+            <!-- Se llena dinámicamente con JS -->
+        </div>
     </div>
 </div>
+
 
     <!-- FOOTER -->
     <footer class="footer">
@@ -1351,4 +1523,5 @@ CHECKOUT (SUPERPUESTO AL CARRITO)
 <script src="app.js"></script>
 </body>
 </html>
+
 

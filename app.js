@@ -17,7 +17,6 @@ const products = [
         features: [
             "Tecnología ClimaCool",
             "Cuello redondo",
-
             "Manga corta",
             "Escudo oficial",
             "100% Poliéster",
@@ -988,416 +987,584 @@ window.checkoutToWhatsApp = checkoutToWhatsApp;
 ========================================================= */
 
 /* =========================================
-   SISTEMA DE AUTENTICACIÓN
+   SISTEMA DE AUTENTICACIÓN Y GESTIÓN DE DATOS
    ========================================= */
 
-// Variables globales
-let currentUser = null;
-let users = JSON.parse(localStorage.getItem('modovar_users')) || [];
-
-// Agregar usuario admin predefinido (Matias)
-const adminUser = {
-    id: 1,
-    username: 'Matias',
-    password: 'Matias840',
-    role: 'admin',
-    createdAt: new Date().toISOString()
+// Claves de LocalStorage
+const DB_KEYS = {
+    USERS: 'modovar_users',
+    ORDERS: 'modovar_orders',
+    PRODUCTS: 'modovar_products',
+    CURRENT_USER: 'modovar_current_user'
 };
 
-// Si no hay usuarios o no existe Matias, lo agregamos
-if (users.length === 0 || !users.find(u => u.username === 'Matias')) {
-    users.push(adminUser);
-    localStorage.setItem('modovar_users', JSON.stringify(users));
-}
+// Objeto principal de la aplicación
+const app = {
+    currentUser: null,
+    products: [],
+    orders: [],
+    users: [],
+    currentOrderNumber: null, // Para editar estado de pedido
 
-let orders = JSON.parse(localStorage.getItem('modovar_orders')) || [];
-const savedProducts = JSON.parse(localStorage.getItem('modovar_products'));
-if (savedProducts) {
-    products.length = 0;
-    products.push(...savedProducts);
-}
-// Cargar sesión al iniciar
-document.addEventListener("DOMContentLoaded", () => {
-    loadSession();
-    updateAuthUI();
-});
+    // Inicialización
+    init: function() {
+        this.initDB();
+        this.loadSession();
+        this.updateAuthUI();
+        this.loadProducts();
+        this.loadOrders();
+        this.loadUsers();
+    },
 
-// Cargar sesión desde localStorage
-function loadSession() {
-    const savedUser = localStorage.getItem('modovar_current_user');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateAuthUI();
-    }
-}
+    // Inicializar Base de Datos si no existe
+    initDB: function() {
+        // Usuarios
+        if (!localStorage.getItem(DB_KEYS.USERS)) {
+            const initialUsers = [
+                { id: 1, username: 'admin', password: '1234', role: 'admin', createdAt: new Date().toISOString() },
+                { id: 2, username: 'user', password: '1234', role: 'user', createdAt: new Date().toISOString() }
+            ];
+            localStorage.setItem(DB_KEYS.USERS, JSON.stringify(initialUsers));
+        }
+        // Productos
+        if (!localStorage.getItem(DB_KEYS.PRODUCTS)) {
+            const initialProducts = [
+                {
+                    id: 1,
+                    name: "Camiseta Selección Argentina Titular 2026",
+                    oldPrice: 128000,
+                    newPrice: 83000,
+                    shortDesc: "Camiseta oficial inspirada en el diseño utilizado por la Selección Argentina en la temporada 2026.",
+                    fullDesc: "Camiseta oficial inspirada en el diseño utilizado por la Selección Argentina en la temporada 2026. Confeccionada con materiales de alto rendimiento.",
+                    images: ["imagenes/titular/titular1.png", "imagenes/titular/titular2.png"],
+                    category: "Camisetas",
+                    subcategory: "Adulto",
+                    sizes: ["S", "M", "L", "XL"],
+                    shipping: true,
+                    rating: 4.5
+                },
+                {
+                    id: 2,
+                    name: "Short Argentina adidas Titular 2026 Niño",
+                    oldPrice: 64500,
+                    newPrice: 48000,
+                    shortDesc: "Adentrate en el legado de los campeones con el Short Argentina adidas Titular 2026 Niño.",
+                    fullDesc: "Adentrate en el legado de los campeones con el Short Argentina adidas Titular 2026 Niño. Tecnología Climacool.",
+                    images: ["imagenes/titular/short1.jpg"],
+                    category: "Shorts",
+                    subcategory: "Niño",
+                    sizes: ["S", "M", "L"],
+                    shipping: true,
+                    rating: 5.0
+                }
+            ];
+            localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(initialProducts));
+        }
+    },
 
-// Guardar sesión en localStorage
-function saveSession() {
-    if (currentUser) {
-        localStorage.setItem('modovar_current_user', JSON.stringify(currentUser));
-    } else {
-        localStorage.removeItem('modovar_current_user');
-    }
-}
+    // Cargar datos desde LocalStorage
+    loadProducts: function() {
+        this.products = JSON.parse(localStorage.getItem(DB_KEYS.PRODUCTS)) || [];
+    },
+    loadOrders: function() {
+        this.orders = JSON.parse(localStorage.getItem(DB_KEYS.ORDERS)) || [];
+    },
+    loadUsers: function() {
+        this.users = JSON.parse(localStorage.getItem(DB_KEYS.USERS)) || [];
+    },
 
-// Actualizar UI del usuario
-function updateAuthUI() {
-    const userStatus = document.getElementById('user-status');
-    if (currentUser) {
-        userStatus.textContent = currentUser.role === 'admin' ? 'ADMIN' : 'LOGUEADO';
-        userStatus.style.display = 'inline-block';
-    } else {
-        userStatus.textContent = '';
-        userStatus.style.display = 'none';
-    }
-}
+    // =========================================
+    // AUTENTICACIÓN
+    // =========================================
+    loadSession: function() {
+        const savedUser = localStorage.getItem(DB_KEYS.CURRENT_USER);
+        if (savedUser) {
+            this.currentUser = JSON.parse(savedUser);
+            this.updateAuthUI();
+        }
+    },
 
-// Abrir modal de autenticación
-function openAuthModal() {
-    if (currentUser) {
-        if (currentUser.role === 'admin') {
-            openAdminPanel();
+    saveSession: function() {
+        if (this.currentUser) {
+            localStorage.setItem(DB_KEYS.CURRENT_USER, JSON.stringify(this.currentUser));
         } else {
-            openUserOrdersModal();
+            localStorage.removeItem(DB_KEYS.CURRENT_USER);
         }
-    } else {
-        document.getElementById('auth-modal').style.display = 'flex';
-    }
-}
+    },
 
-// Cerrar modal de autenticación
-function closeAuthModal() {
-    document.getElementById('auth-modal').style.display = 'none';
-}
-
-// Abrir panel de administración
-function openAdminPanel() {
-    document.getElementById('admin-panel').style.display = 'flex';
-    loadAdminProducts();
-    loadAdminOrders();
-    loadAdminUsers();
-}
-
-// Cerrar panel de administración
-function closeAdminPanel() {
-    document.getElementById('admin-panel').style.display = 'none';
-}
-
-// Abrir modal de historial de compras
-function openUserOrdersModal() {
-    document.getElementById('user-orders-modal').style.display = 'flex';
-    loadUserOrders();
-}
-
-// Cerrar modal de historial de compras
-function closeUserOrdersModal() {
-    document.getElementById('user-orders-modal').style.display = 'none';
-}
-
-// Cambiar entre pestañas de autenticación
-function switchAuthTab(tab) {
-    document.querySelectorAll('.auth-tab').forEach(tabBtn => {
-        tabBtn.classList.remove('active');
-    });
-    document.querySelectorAll('.auth-form').forEach(form => {
-        form.style.display = 'none';
-    });
-    
-    if (tab === 'login') {
-        document.querySelector('.auth-tab:first-child').classList.add('active');
-        document.getElementById('login-form').style.display = 'flex';
-    } else {
-        document.querySelector('.auth-tab:last-child').classList.add('active');
-        document.getElementById('register-form').style.display = 'flex';
-    }
-}
-
-// Registrar usuario
-function registerUser(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('register-username').value.trim();
-    const password = document.getElementById('register-password').value;
-    const confirm = document.getElementById('register-confirm').value;
-    
-    if (password !== confirm) {
-        showToast('Las contraseñas no coinciden', 'error');
-        return;
-    }
-    
-    if (users.find(u => u.username === username)) {
-        showToast('El usuario ya existe', 'error');
-        return;
-    }
-    
-    const newUser = {
-        id: Date.now(),
-        username: username,
-        password: password,
-        role: 'user',
-        createdAt: new Date().toISOString()
-    };
-    
-    users.push(newUser);
-    localStorage.setItem('modovar_users', JSON.stringify(users));
-    
-    showToast('Usuario registrado con éxito', 'success');
-    document.getElementById('register-form').reset();
-    switchAuthTab('login');
-}
-
-// Iniciar sesión
-function loginUser(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-    
-    const user = users.find(u => u.username === username && u.password === password);
-    
-    if (!user) {
-        showToast('Usuario o contraseña incorrectos', 'error');
-        return;
-    }
-    
-    currentUser = user;
-    saveSession();
-    updateAuthUI();
-    showToast(`¡Bienvenido ${user.username}!`, 'success');
-    closeAuthModal();
-}
-
-// Cerrar sesión
-function logoutUser() {
-    currentUser = null;
-    saveSession();
-    updateAuthUI();
-    showToast('Sesión cerrada', 'info');
-}
-
-// Cargar pedidos de usuario
-function loadUserOrders() {
-    const userOrders = orders.filter(o => o.userId === currentUser.id);
-    const ordersList = document.getElementById('user-orders-list');
-    
-    if (userOrders.length === 0) {
-        ordersList.innerHTML = '<p style="text-align:center;padding:20px;">No tienes compras registradas</p>';
-        return;
-    }
-    
-    ordersList.innerHTML = '';
-    userOrders.forEach(order => {
-        const orderItem = document.createElement('div');
-        orderItem.className = 'user-order-item';
-        orderItem.innerHTML = `
-            <h4>Orden: ${order.orderNumber}</h4>
-            <p class="order-date">Fecha: ${new Date(order.date).toLocaleDateString()}</p>
-            <p>Productos: ${order.items.length}</p>
-            <p class="order-total">Total: ${formatPrice(order.total)}</p>
-        `;
-        ordersList.appendChild(orderItem);
-    });
-}
-
-// Cargar productos para admin
-function loadAdminProducts() {
-    const productsList = document.getElementById('admin-products-list');
-    
-    if (products.length === 0) {
-        productsList.innerHTML = '<p>No hay productos registrados</p>';
-        return;
-    }
-    
-    productsList.innerHTML = '';
-    products.forEach(product => {
-        const productItem = document.createElement('div');
-        productItem.className = 'admin-item';
-        productItem.innerHTML = `
-            <div class="admin-item-info">
-                <h4>${product.name}</h4>
-                <p>Precio: ${formatPrice(product.newPrice)}</p>
-                <p>ID: ${product.id}</p>
-            </div>
-            <div class="admin-item-actions">
-                <button class="btn-edit" onclick="editProduct(${product.id})">Editar</button>
-                <button class="btn-delete" onclick="deleteProduct(${product.id})">Eliminar</button>
-            </div>
-        `;
-        productsList.appendChild(productItem);
-    });
-}
-
-// Agregar producto (admin)
-function addProduct(e) {
-    e.preventDefault();
-    
-    const name = document.getElementById('admin-product-name').value.trim();
-    const price = parseFloat(document.getElementById('admin-product-price').value);
-    const image = document.getElementById('admin-product-image').value.trim();
-    const desc = document.getElementById('admin-product-desc').value.trim();
-    
-    if (!name || !price || !image || !desc) {
-        showToast('Completa todos los campos', 'error');
-        return;
-    }
-    
-    const newProduct = {
-        id: Date.now(),
-        name: name,
-        oldPrice: price * 1.5,
-        newPrice: price,
-        shortDesc: desc,
-        fullDesc: desc,
-        images: [image],
-        features: ['Nuevo producto'],
-        rating: 0,
-        reviews: 0
-    };
-    
-    products.push(newProduct);
-    localStorage.setItem('modovar_products', JSON.stringify(products));
-    
-    showToast('Producto agregado con éxito', 'success');
-    document.getElementById('admin-add-product').reset();
-    loadAdminProducts();
-}
-
-// Editar producto (admin)
-function editProduct(id) {
-    const product = products.find(p => p.id === id);
-    if (product) {
-        const newName = prompt('Nuevo nombre:', product.name);
-        const newPrice = prompt('Nuevo precio:', product.newPrice);
+    updateAuthUI: function() {
+        // Actualizar botones de navegación si existen
+        const loginBtn = document.getElementById('login-btn');
+        const adminBtn = document.getElementById('admin-btn');
+        const logoutBtn = document.getElementById('logout-btn');
         
-        if (newName && newPrice) {
-            product.name = newName;
-            product.newPrice = parseFloat(newPrice);
-            localStorage.setItem('modovar_products', JSON.stringify(products));
-            loadAdminProducts();
-            showToast('Producto actualizado', 'success');
+        if (loginBtn) loginBtn.style.display = this.currentUser ? 'none' : 'inline-block';
+        if (adminBtn) adminBtn.style.display = this.currentUser && this.currentUser.role === 'admin' ? 'inline-block' : 'none';
+        if (logoutBtn) logoutBtn.style.display = this.currentUser ? 'inline-block' : 'none';
+    },
+
+    handleLogin: function(e) {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errorDiv = document.getElementById('login-error');
+
+        const user = this.users.find(u => u.username === username && u.password === password);
+
+        if (user) {
+            this.currentUser = user;
+            this.saveSession();
+            this.updateAuthUI();
+            errorDiv.style.display = 'none';
+            showToast(`¡Bienvenido ${user.username}!`, 'success');
+            this.closeAuthModal();
+            
+            // Redirección automática según rol
+            if (user.role === 'admin') {
+                this.openAdminPanel();
+            } else {
+                this.router('home');
+            }
+        } else {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Usuario o contraseña incorrectos';
+            showToast('Error de autenticación', 'error');
         }
-    }
-}
+    },
 
-// Eliminar producto (admin)
-function deleteProduct(id) {
-    if (confirm('¿Estás seguro de eliminar este producto?')) {
-        products = products.filter(p => p.id !== id);
-        localStorage.setItem('modovar_products', JSON.stringify(products));
-        loadAdminProducts();
-        showToast('Producto eliminado', 'success');
-    }
-}
+    handleRegister: function(e) {
+        e.preventDefault();
+        const username = document.getElementById('register-username').value.trim();
+        const password = document.getElementById('register-password').value;
+        const confirm = document.getElementById('register-confirm').value;
+        const errorDiv = document.getElementById('register-error');
 
-// Cargar pedidos para admin
-function loadAdminOrders() {
-    const ordersList = document.getElementById('admin-orders-list');
-    
-    if (orders.length === 0) {
-        ordersList.innerHTML = '<p>No hay pedidos registrados</p>';
-        return;
-    }
-    
-    ordersList.innerHTML = '';
-    orders.forEach(order => {
-        const orderItem = document.createElement('div');
-        orderItem.className = 'admin-item';
-        orderItem.innerHTML = `
-            <div class="admin-item-info">
-                <h4>Orden: ${order.orderNumber}</h4>
-                <p>Cliente: ${order.customer.name}</p>
-                <p>Fecha: ${new Date(order.date).toLocaleDateString()}</p>
-                <p>Total: ${formatPrice(order.total)}</p>
-            </div>
-            <div class="admin-item-actions">
-                <button class="btn-edit" onclick="viewOrderDetails('${order.orderNumber}')">Ver detalles</button>
-            </div>
-        `;
-        ordersList.appendChild(orderItem);
-    });
-}
+        if (password !== confirm) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Las contraseñas no coinciden';
+            showToast('Error de registro', 'error');
+            return;
+        }
 
-// Ver detalles de pedido
-function viewOrderDetails(orderNumber) {
-    const order = orders.find(o => o.orderNumber === orderNumber);
-    if (order) {
-        let message = `Orden: ${order.orderNumber}\n\n`;
-        message += `Cliente: ${order.customer.name}\n`;
-        message += `Fecha: ${new Date(order.date).toLocaleDateString()}\n`;
-        message += `Total: ${formatPrice(order.total)}\n\n`;
-        message += `Productos:\n`;
-        order.items.forEach(item => {
-            message += `- ${item.name} x${item.quantity} - ${formatPrice(item.newPrice * item.quantity)}\n`;
+        if (this.users.find(u => u.username === username)) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'El usuario ya existe';
+            showToast('Error de registro', 'error');
+            return;
+        }
+
+        const newUser = {
+            id: Date.now(),
+            username: username,
+            password: password,
+            role: 'user',
+            createdAt: new Date().toISOString()
+        };
+
+        this.users.push(newUser);
+        localStorage.setItem(DB_KEYS.USERS, JSON.stringify(this.users));
+
+        showToast('Usuario registrado con éxito', 'success');
+        document.getElementById('register-form').reset();
+        errorDiv.style.display = 'none';
+        this.switchAuthTab('login');
+    },
+
+    logout: function() {
+        this.currentUser = null;
+        this.saveSession();
+        this.updateAuthUI();
+        showToast('Sesión cerrada', 'info');
+        this.router('home');
+    },
+
+    // =========================================
+    // MODALES Y NAVEGACIÓN
+    // =========================================
+    closeAuthModal: function() {
+        document.getElementById('auth-modal').style.display = 'none';
+    },
+
+    openAuthModal: function() {
+        if (this.currentUser) {
+            if (this.currentUser.role === 'admin') {
+                this.openAdminPanel();
+            } else {
+                this.openUserOrdersModal();
+            }
+        } else {
+            document.getElementById('auth-modal').style.display = 'flex';
+        }
+    },
+
+    switchAuthTab: function(tab) {
+        document.querySelectorAll('.auth-tab').forEach(tabBtn => {
+            tabBtn.classList.remove('active');
         });
-        alert(message);
+        document.querySelectorAll('.auth-form').forEach(form => {
+            form.style.display = 'none';
+        });
+
+        if (tab === 'login') {
+            document.querySelector('.auth-tab:first-child').classList.add('active');
+            document.getElementById('login-form').style.display = 'flex';
+        } else {
+            document.querySelector('.auth-tab:last-child').classList.add('active');
+            document.getElementById('register-form').style.display = 'flex';
+        }
+    },
+
+    openAdminPanel: function() {
+        document.getElementById('admin-panel').style.display = 'flex';
+        this.loadAdminProducts();
+        this.loadAdminOrders();
+        this.loadAdminUsers();
+    },
+
+    closeAdminPanel: function() {
+        document.getElementById('admin-panel').style.display = 'none';
+    },
+
+    openUserOrdersModal: function() {
+        document.getElementById('user-orders-modal').style.display = 'flex';
+        this.loadUserOrders();
+    },
+
+    closeUserOrdersModal: function() {
+        document.getElementById('user-orders-modal').style.display = 'none';
+    },
+
+    // =========================================
+    // GESTIÓN DE PRODUCTOS (ADMIN)
+    // =========================================
+    loadAdminProducts: function() {
+        const productsList = document.getElementById('admin-products-list');
+        productsList.innerHTML = '';
+
+        if (this.products.length === 0) {
+            productsList.innerHTML = '<p style="text-align:center;padding:20px;">No hay productos registrados</p>';
+            return;
+        }
+
+        this.products.forEach(product => {
+            const productItem = document.createElement('div');
+            productItem.className = 'admin-item';
+            productItem.innerHTML = `
+                <div class="admin-item-info">
+                    <h4>${product.name}</h4>
+                    <p>Categoría: ${product.category} - ${product.subcategory}</p>
+                    <p>Precio: ${formatPrice(product.newPrice)}</p>
+                    <p>Tallas: ${product.sizes.join(', ')}</p>
+                </div>
+                <div class="admin-item-actions">
+                    <button class="btn-edit" onclick="app.editProduct(${product.id})">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn-delete" onclick="app.deleteProduct(${product.id})">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            `;
+            productsList.appendChild(productItem);
+        });
+    },
+
+    resetProductForm: function() {
+        document.getElementById('admin-add-product').reset();
+        document.getElementById('admin-prod-id').value = '';
+        document.getElementById('admin-product-sizes').value = 'S, M, L, XL';
+        document.getElementById('admin-product-shipping').checked = false;
+    },
+
+    saveProduct: function(e) {
+        e.preventDefault();
+        const id = document.getElementById('admin-prod-id').value;
+        const name = document.getElementById('admin-product-name').value.trim();
+        const category = document.getElementById('admin-product-category').value;
+        const subcategory = document.getElementById('admin-product-subcategory').value;
+        const price = parseFloat(document.getElementById('admin-product-price').value);
+        const promoPrice = parseFloat(document.getElementById('admin-product-promo').value) || 0;
+        const shortDesc = document.getElementById('admin-product-short-desc').value.trim();
+        const longDesc = document.getElementById('admin-product-long-desc').value.trim();
+        const sizes = document.getElementById('admin-product-sizes').value.split(',').map(s => s.trim());
+        const images = document.getElementById('admin-product-images').value.split(',').map(s => s.trim());
+        const shipping = document.getElementById('admin-product-shipping').checked;
+
+        if (!name || !category || !subcategory || !price) {
+            showToast('Nombre, categoría, subcategoría y precio son obligatorios', 'error');
+            return;
+        }
+
+        const productData = {
+            id: id ? parseInt(id) : Date.now(),
+            name: name,
+            category: category,
+            subcategory: subcategory,
+            oldPrice: promoPrice > 0 ? price : price * 1.5,
+            newPrice: promoPrice > 0 ? promoPrice : price,
+            shortDesc: shortDesc,
+            fullDesc: longDesc,
+            sizes: sizes,
+            images: images.length > 0 ? images : ['imagenes/default.png'],
+            shipping: shipping,
+            rating: 0,
+            reviews: 0
+        };
+
+        if (id) {
+            // Editar
+            const index = this.products.findIndex(p => p.id == id);
+            if (index !== -1) {
+                this.products[index] = productData;
+                showToast('Producto actualizado', 'success');
+            }
+        } else {
+            // Nuevo
+            this.products.push(productData);
+            showToast('Producto agregado', 'success');
+        }
+
+        localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(this.products));
+        this.resetProductForm();
+        this.loadAdminProducts();
+    },
+
+    editProduct: function(id) {
+        const product = this.products.find(p => p.id === id);
+        if (product) {
+            document.getElementById('admin-prod-id').value = product.id;
+            document.getElementById('admin-product-name').value = product.name;
+            document.getElementById('admin-product-category').value = product.category;
+            document.getElementById('admin-product-subcategory').value = product.subcategory;
+            document.getElementById('admin-product-price').value = product.oldPrice;
+            document.getElementById('admin-product-promo').value = product.newPrice;
+            document.getElementById('admin-product-short-desc').value = product.shortDesc;
+            document.getElementById('admin-product-long-desc').value = product.fullDesc;
+            document.getElementById('admin-product-sizes').value = product.sizes.join(', ');
+            document.getElementById('admin-product-images').value = product.images.join(', ');
+            document.getElementById('admin-product-shipping').checked = product.shipping;
+            showToast('Producto cargado para edición', 'info');
+        }
+    },
+
+    deleteProduct: function(id) {
+        if (confirm('¿Estás seguro de eliminar este producto?')) {
+            this.products = this.products.filter(p => p.id !== id);
+            localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(this.products));
+            this.loadAdminProducts();
+            showToast('Producto eliminado', 'success');
+        }
+    },
+
+    // =========================================
+    // GESTIÓN DE PEDIDOS (ADMIN)
+    // =========================================
+    loadAdminOrders: function() {
+        const ordersList = document.getElementById('admin-orders-list');
+        ordersList.innerHTML = '';
+
+        if (this.orders.length === 0) {
+            ordersList.innerHTML = '<p style="text-align:center;padding:20px;">No hay pedidos registrados</p>';
+            return;
+        }
+
+        this.orders.forEach(order => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'admin-item';
+            orderItem.innerHTML = `
+                <div class="admin-item-info">
+                    <h4>Orden: ${order.orderNumber}</h4>
+                    <p>Cliente: ${order.customer.name}</p>
+                    <p>Fecha: ${new Date(order.date).toLocaleDateString()}</p>
+                    <p>Total: ${formatPrice(order.total)}</p>
+                    <p>Estado: <strong>${order.status}</strong></p>
+                </div>
+                <div class="admin-item-actions">
+                    <button class="btn-edit" onclick="app.viewOrderDetails('${order.orderNumber}')">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </button>
+                </div>
+            `;
+            ordersList.appendChild(orderItem);
+        });
+    },
+
+    viewOrderDetails: function(orderNumber) {
+        const order = this.orders.find(o => o.orderNumber === orderNumber);
+        if (order) {
+            this.currentOrderNumber = orderNumber;
+            const modalBody = document.getElementById('order-detail-body');
+            let itemsHtml = '';
+            order.items.forEach(item => {
+                itemsHtml += `<li>${item.name} x${item.quantity} - ${formatPrice(item.newPrice * item.quantity)}</li>`;
+            });
+
+            modalBody.innerHTML = `
+                <p><strong>Cliente:</strong> ${order.customer.name}</p>
+                <p><strong>Dirección:</strong> ${order.customer.address}, ${order.customer.neighborhood}</p>
+                <p><strong>Fecha:</strong> ${new Date(order.date).toLocaleString()}</p>
+                <p><strong>Total:</strong> ${formatPrice(order.total)}</p>
+                <p><strong>Estado Actual:</strong> ${order.status}</p>
+                <ul>${itemsHtml}</ul>
+            `;
+            document.getElementById('order-status-select').value = order.status;
+            document.getElementById('order-detail-modal').style.display = 'flex';
+        }
+    },
+
+    updateOrderStatus: function() {
+        const newStatus = document.getElementById('order-status-select').value;
+        const orderIndex = this.orders.findIndex(o => o.orderNumber === this.currentOrderNumber);
+        
+        if (orderIndex !== -1) {
+            this.orders[orderIndex].status = newStatus;
+            localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(this.orders));
+            this.loadAdminOrders();
+            showToast('Estado actualizado', 'success');
+        }
+    },
+
+
+    // =========================================
+    // GESTIÓN DE USUARIOS (ADMIN)
+    // =========================================
+    loadAdminUsers: function() {
+        const usersList = document.getElementById('admin-users-list');
+        usersList.innerHTML = '';
+
+        if (this.users.length === 0) {
+            usersList.innerHTML = '<p style="text-align:center;padding:20px;">No hay usuarios registrados</p>';
+            return;
+        }
+
+        this.users.forEach(user => {
+            const userItem = document.createElement('div');
+            userItem.className = 'admin-item';
+            userItem.innerHTML = `
+                <div class="admin-item-info">
+                    <h4>${user.username}</h4>
+                    <p>Rol: ${user.role}</p>
+                    <p>Registrado: ${new Date(user.createdAt).toLocaleDateString()}</p>
+                </div>
+                <div class="admin-item-actions">
+                    <button class="btn-delete" onclick="app.deleteUser(${user.id})">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            `;
+            usersList.appendChild(userItem);
+        });
+    },
+
+    deleteUser: function(id) {
+        if (confirm('¿Estás seguro de eliminar este usuario?')) {
+            this.users = this.users.filter(u => u.id !== id);
+            localStorage.setItem(DB_KEYS.USERS, JSON.stringify(this.users));
+            this.loadAdminUsers();
+            showToast('Usuario eliminado', 'success');
+        }
+    },
+
+    // =========================================
+    // HISTORIAL DE COMPRAS (USUARIO)
+    // =========================================
+    loadUserOrders: function() {
+        const userOrders = this.orders.filter(o => o.customer.userId === this.currentUser.id);
+        const ordersList = document.getElementById('user-orders-list');
+        
+        if (userOrders.length === 0) {
+            ordersList.innerHTML = '<p style="text-align:center;padding:20px;">No tienes compras registradas</p>';
+            return;
+        }
+        
+        ordersList.innerHTML = '';
+        userOrders.forEach(order => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'user-order-item';
+            orderItem.innerHTML = `
+                <h4>Orden: ${order.orderNumber}</h4>
+                <p class="order-date">Fecha: ${new Date(order.date).toLocaleDateString()}</p>
+                <p>Productos: ${order.items.length}</p>
+                <p class="order-total">Total: ${formatPrice(order.total)}</p>
+                <p class="order-status">Estado: <strong>${order.status}</strong></p>
+            `;
+            ordersList.appendChild(orderItem);
+        });
+    },
+
+    // =========================================
+    // UTILIDADES
+    // =========================================
+    showAdminSection: function(section) {
+        document.querySelectorAll('.admin-section').forEach(sec => {
+            sec.style.display = 'none';
+        });
+        document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        document.getElementById(`admin-${section}`).style.display = 'block';
+        event.target.classList.add('active');
+    },
+
+    router: function(viewId) {
+        // Ocultar todas las vistas
+        document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+        
+        // Mostrar vista seleccionada
+        const target = document.getElementById(`view-${viewId}`);
+        if (target) {
+            target.style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        // Actualizar estado activo en nav
+        const navLink = document.querySelector(`.nav-link[onclick="app.router('${viewId}')"]`);
+        if (navLink) navLink.classList.add('active');
     }
-}
+};
 
-// Cargar usuarios para admin
-function loadAdminUsers() {
-    const usersList = document.getElementById('admin-users-list');
-    
-    if (users.length === 0) {
-        usersList.innerHTML = '<p>No hay usuarios registrados</p>';
-        return;
-    }
-    
-    usersList.innerHTML = '';
-    users.forEach(user => {
-        const userItem = document.createElement('div');
-        userItem.className = 'admin-item';
-        userItem.innerHTML = `
-            <div class="admin-item-info">
-                <h4>${user.username}</h4>
-                <p>Rol: ${user.role}</p>
-                <p>Registrado: ${new Date(user.createdAt).toLocaleDateString()}</p>
-            </div>
-            <div class="admin-item-actions">
-                <button class="btn-delete" onclick="deleteUser(${user.id})">Eliminar</button>
-            </div>
-        `;
-        usersList.appendChild(userItem);
-    });
-}
-
-// Eliminar usuario (admin)
-function deleteUser(id) {
-    if (confirm('¿Estás seguro de eliminar este usuario?')) {
-        users = users.filter(u => u.id !== id);
-        localStorage.setItem('modovar_users', JSON.stringify(users));
-        loadAdminUsers();
-        showToast('Usuario eliminado', 'success');
-    }
-}
-
-// Mostrar sección del admin
-function showAdminSection(section) {
-    document.querySelectorAll('.admin-section').forEach(sec => {
-        sec.style.display = 'none';
-    });
-    document.querySelectorAll('.admin-nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    document.getElementById(`admin-${section}`).style.display = 'block';
-    event.target.classList.add('active');
-}
-
-// Agregar event listeners a los formularios
+// Inicializar al cargar
 document.addEventListener("DOMContentLoaded", () => {
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const adminAddProduct = document.getElementById('admin-add-product');
-    
-    if (loginForm) {
-        loginForm.addEventListener('submit', loginUser);
-    }
-    
-    if (registerForm) {
-        registerForm.addEventListener('submit', registerUser);
-    }
-    
-    if (adminAddProduct) {
-        adminAddProduct.addEventListener('submit', addProduct);
-    }
+    app.init();
 });
+
+// Función auxiliar para formatear precio (si no existe en el código global)
+if (typeof formatPrice === 'undefined') {
+    function formatPrice(price) {
+        return new Intl.NumberFormat('es-AR', { 
+            style: 'currency', 
+            currency: 'ARS',
+            minimumFractionDigits: 0
+        }).format(price);
+    }
+}
+
+// Función auxiliar para Toast (si no existe en el código global)
+if (typeof showToast === 'undefined') {
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
+}
