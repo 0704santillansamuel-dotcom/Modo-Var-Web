@@ -1568,3 +1568,87 @@ if (typeof showToast === 'undefined') {
         }, 3000);
     }
 }
+
+/* =========================================
+   SEGUIMIENTO DE PEDIDOS (CLIENTE)
+   ========================================= */
+function trackOrder() {
+    const trackingInput = document.getElementById('tracking-input');
+    const trackingForm = document.getElementById('tracking-form');
+    const resultDiv = document.getElementById('tracking-result');
+    const statusDiv = document.getElementById('tracking-status');
+    const detailsDiv = document.getElementById('tracking-details');
+
+    trackingForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const orderNumber = trackingInput.value.trim().toUpperCase();
+        
+        if (!orderNumber || !orderNumber.startsWith('MV-')) {
+            showToast('Ingresa un código válido (Ej: MV-12345678)', 'error');
+            return;
+        }
+
+        // Buscar en todas las órdenes (usa la DB del admin)
+        const orders = JSON.parse(localStorage.getItem('modovar_orders')) || [];
+        const order = orders.find(o => o.orderNumber === orderNumber);
+
+        if (!order) {
+            statusDiv.innerHTML = `
+                <div style="color: var(--error); font-weight: 600; font-size: 1.1rem; margin-bottom: 10px;">
+                    <i class="fas fa-exclamation-triangle"></i> Pedido no encontrado
+                </div>
+            `;
+            detailsDiv.innerHTML = `
+                <p style="color: var(--text-light);">Verifica que el código sea correcto (MV-XXXXXXXX)</p>
+                <p style="color: var(--text-light);">Si tienes problemas, contactanos por WhatsApp</p>
+            `;
+            resultDiv.style.display = 'block';
+            return;
+        }
+
+        // Estado con iconos y colores
+        const statusConfig = {
+            'Pendiente': { icon: 'fa-clock', color: 'var(--warning)', label: 'Esperando Pago' },
+            'Pago Confirmado': { icon: 'fa-check-circle', color: 'var(--success)', label: 'Pago Confirmado' },
+            'Preparando Envío': { icon: 'fa-box', color: 'var(--info)', label: 'Preparando Envío' },
+            'Enviado': { icon: 'fa-truck', color: 'var(--arg-blue)', label: 'En Camino' },
+            'Entregado': { icon: 'fa-check-double', color: 'var(--success)', label: '¡Entregado!' }
+        };
+
+        const statusInfo = statusConfig[order.status] || statusConfig['Pendiente'];
+
+        statusDiv.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                <i class="fas ${statusInfo.icon}" style="color: ${statusInfo.color}; font-size: 2rem;"></i>
+                <div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: ${statusInfo.color};">${statusInfo.label}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-light);">Pedido #${order.orderNumber}</div>
+                </div>
+            </div>
+        `;
+
+        detailsDiv.innerHTML = `
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow-sm);">
+                <p><strong>Fecha:</strong> ${new Date(order.date).toLocaleDateString('es-AR')}</p>
+                <p><strong>Cliente:</strong> ${order.customer.name}</p>
+                <p><strong>Total:</strong> ${formatPrice(order.total)}</p>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <strong>Productos (${order.items.length}):</strong>
+                    ${order.items.map(item => `<div style="margin: 5px 0;">• ${item.name} (x${item.quantity})</div>`).join('')}
+                </div>
+            </div>
+        `;
+
+        resultDiv.style.display = 'block';
+        trackingInput.value = '';
+        trackingInput.placeholder = `Último seguimiento: ${statusInfo.label}`;
+        
+        showToast(`Pedido ${orderNumber} encontrado`, 'success');
+    });
+}
+
+// Inicializar seguimiento cuando cargue el DOM
+document.addEventListener('DOMContentLoaded', function() {
+    trackOrder();
+});

@@ -589,17 +589,21 @@
             </div>
         </div>
         
-        <div class="shipping-tracking">
-            <h3>Seguimiento de Pedido</h3>
-            <form class="tracking-form">
-                <input type="text" placeholder="Ingresa tu número de seguimiento">
-                <button type="submit">
-                    <i class="fas fa-search"></i> Buscar
-                </button>
-            </form>
-        </div>
+<div class="shipping-tracking">
+    <h3>Seguimiento de Pedido</h3>
+    <form class="tracking-form" id="tracking-form">
+        <input type="text" id="tracking-input" placeholder="Ej: MV-12345678" maxlength="20">
+        <button type="submit">
+            <i class="fas fa-search"></i> Buscar
+        </button>
+    </form>
+    <div id="tracking-result" style="display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 12px; border-left: 4px solid var(--arg-blue);">
+        <div id="tracking-status"></div>
+        <div id="tracking-details"></div>
+    </div>
+</div>
     </section>
-
+ 
     <!-- SECCIÓN PAGOS -->
     <section id="pagos" class="section hidden-section">
         <div class="section-header">
@@ -1522,6 +1526,4 @@ CHECKOUT (SUPERPUESTO AL CARRITO)
 <!-- SCRIPT PRINCIPAL -->
 <script src="app.js"></script>
 </body>
-</html>
-
-
+</html> 

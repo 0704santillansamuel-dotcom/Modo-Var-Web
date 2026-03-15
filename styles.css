@@ -2926,3 +2926,39 @@ main {
         padding-right: 20px;
     }
 }
+
+/* =========================================
+   ESTILOS SEGUIMIENTO DE PEDIDO
+   ========================================= */
+#tracking-result {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#tracking-input {
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+#tracking-input:focus {
+    border-color: var(--arg-blue);
+    box-shadow: 0 0 0 3px rgba(117, 170, 219, 0.1);
+}
+
+.tracking-form button:hover {
+    background: #5a9bc9;
+    transform: translateY(-2px);
+}
