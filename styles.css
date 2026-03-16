@@ -2962,3 +2962,32 @@ main {
     background: #5a9bc9;
     transform: translateY(-2px);
 }
+
+/* =========================================
+   ESTILOS RESEÑAS DINÁMICAS
+   ========================================= */
+.rating-star {
+    transition: all 0.2s ease;
+    cursor: pointer !important;
+}
+
+.rating-star:hover {
+    color: var(--accent) !important;
+    transform: scale(1.1);
+}
+
+.rating-star.rated {
+    color: var(--accent) !important;
+}
+
+#review-form textarea:focus {
+    border-color: var(--arg-blue) !important;
+    box-shadow: 0 0 0 3px rgba(117, 170, 219, 0.1);
+}
+
+.review-date {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem !important;
+}

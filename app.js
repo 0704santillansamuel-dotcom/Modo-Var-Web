@@ -1632,17 +1632,49 @@ function trackOrder() {
             <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow-sm);">
                 <p><strong>Fecha:</strong> ${new Date(order.date).toLocaleDateString('es-AR')}</p>
                 <p><strong>Cliente:</strong> ${order.customer.name}</p>
+                <p><strong>Teléfono:</strong> ${order.customer.phone}</p>
                 <p><strong>Total:</strong> ${formatPrice(order.total)}</p>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                     <strong>Productos (${order.items.length}):</strong>
                     ${order.items.map(item => `<div style="margin: 5px 0;">• ${item.name} (x${item.quantity})</div>`).join('')}
                 </div>
+                
+                ${order.status === 'Entregado' ? `
+                    <div id="review-section-${order.orderNumber}" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee;">
+                        <h4 style="color: var(--arg-blue); margin-bottom: 15px;">
+                            <i class="fas fa-star"></i> ¿Cómo fue tu experiencia?
+                        </h4>
+                        <div id="review-form-${order.orderNumber}" style="display: block;">
+                            <div class="review-stars" style="display: flex; gap: 5px; margin-bottom: 15px;">
+                                <i class="fas fa-star rating-star" data-rating="1" style="font-size: 1.5rem; cursor: pointer; color: #ddd;"></i>
+                                <i class="fas fa-star rating-star" data-rating="2" style="font-size: 1.5rem; cursor: pointer; color: #ddd;"></i>
+                                <i class="fas fa-star rating-star" data-rating="3" style="font-size: 1.5rem; cursor: pointer; color: #ddd;"></i>
+                                <i class="fas fa-star rating-star" data-rating="4" style="font-size: 1.5rem; cursor: pointer; color: #ddd;"></i>
+                                <i class="fas fa-star rating-star" data-rating="5" style="font-size: 1.5rem; cursor: pointer; color: #ddd;"></i>
+                            </div>
+                            <input type="text" id="review-name-${order.orderNumber}" placeholder="Tu nombre (opcional)" maxlength="50" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
+                            <textarea id="review-text-${order.orderNumber}" placeholder="Cuéntanos tu experiencia..." rows="3" maxlength="500" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
+                            <button onclick="submitReview('${order.orderNumber}')" style="width: 100%; padding: 12px; background: var(--arg-blue); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px;">
+                                <i class="fas fa-paper-plane"></i> Publicar Reseña
+                            </button>
+                        </div>
+                        <div id="review-submitted-${order.orderNumber}" style="display: none; text-align: center; padding: 20px; background: #f0f8ff; border-radius: 8px;">
+                            <i class="fas fa-check-circle" style="color: var(--success); font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p style="color: var(--success); font-weight: 600;">¡Gracias por tu reseña! Ya aparece en nuestra página.</p>
+                        </div>
+                    </div>
+                ` : ''}
             </div>
         `;
 
         resultDiv.style.display = 'block';
         trackingInput.value = '';
         trackingInput.placeholder = `Último seguimiento: ${statusInfo.label}`;
+        
+        // Inicializar estrellas si hay reseña
+        if (order.status === 'Entregado') {
+            setTimeout(() => initReviewStars(order.orderNumber), 200);
+        }
         
         showToast(`Pedido ${orderNumber} encontrado`, 'success');
     });
@@ -1652,3 +1684,145 @@ function trackOrder() {
 document.addEventListener('DOMContentLoaded', function() {
     trackOrder();
 });
+
+/* =========================================
+   SISTEMA DE RESEÑAS DINÁMICAS
+   ========================================= */
+let currentRating = {};
+
+function initReviewStars(orderNumber) {
+    const stars = document.querySelectorAll(`#review-section-${orderNumber} .rating-star`);
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            currentRating[orderNumber] = rating;
+            
+            stars.forEach((s, index) => {
+                s.classList.toggle('rated', index < rating);
+                s.style.color = index < rating ? 'var(--accent)' : '#ddd';
+            });
+        });
+        
+        star.addEventListener('mouseover', function() {
+            const rating = parseInt(this.dataset.rating);
+            stars.forEach((s, index) => {
+                s.style.color = index < rating ? 'var(--accent)' : '#ddd';
+            });
+        });
+    });
+    
+    // Reset al salir del hover
+    document.querySelector(`#review-section-${orderNumber}`).addEventListener('mouseleave', function() {
+        const rating = currentRating[orderNumber] || 0;
+        stars.forEach((s, index) => {
+            s.style.color = index < rating ? 'var(--accent)' : '#ddd';
+        });
+    });
+}
+
+function submitReview(orderNumber) {
+    const rating = currentRating[orderNumber];
+    const name = document.getElementById(`review-name-${orderNumber}`).value.trim() || 'Cliente Satisfecho';
+    const text = document.getElementById(`review-text-${orderNumber}`).value.trim();
+    
+    if (!rating || rating < 1) {
+        showToast('Selecciona una calificación con las estrellas', 'error');
+        return;
+    }
+    
+    if (!text || text.length < 10) {
+        showToast('Escribe al menos 10 caracteres sobre tu experiencia', 'error');
+        return;
+    }
+    
+    // Obtener datos del pedido
+    const orders = JSON.parse(localStorage.getItem('modovar_orders')) || [];
+    const order = orders.find(o => o.orderNumber === orderNumber);
+    
+    // Crear reseña
+    const review = {
+        id: Date.now(),
+        name: name,
+        rating: rating,
+        text: text,
+        orderNumber: orderNumber,
+        date: new Date().toLocaleDateString('es-AR'),
+        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 5) + 1}`,
+        purchaseDate: order.date
+    };
+    
+    // Cargar reseñas existentes
+    let reviews = JSON.parse(localStorage.getItem('modovar_reviews')) || [];
+    reviews.unshift(review); // Agregar al inicio (más reciente primero)
+    localStorage.setItem('modovar_reviews', JSON.stringify(reviews));
+    
+    // Ocultar formulario, mostrar confirmación
+    document.getElementById(`review-form-${orderNumber}`).style.display = 'none';
+    document.getElementById(`review-submitted-${orderNumber}`).style.display = 'block';
+    
+    // Actualizar sección de reseñas en vivo
+    loadReviewsSection();
+    
+    showToast('¡Reseña publicada con éxito!', 'success');
+}
+
+// Función para cargar reseñas en la sección de reseñas
+function loadReviewsSection() {
+    const reviews = JSON.parse(localStorage.getItem('modovar_reviews')) || [];
+    const container = document.querySelector('.reviews-container');
+    
+    if (container && reviews.length > 0) {
+        container.innerHTML = '';
+        
+        reviews.slice(0, 4).forEach(review => { // Mostrar solo 4 más recientes
+            const reviewCard = document.createElement('div');
+            reviewCard.className = 'review-card';
+            reviewCard.innerHTML = `
+                <div class="review-header">
+                    <div class="review-avatar">
+                        <img src="${review.avatar}" alt="${review.name}">
+                    </div>
+                    <div class="review-info">
+                        <h4>${review.name}</h4>
+                        <div class="review-rating">
+                            ${[...Array(5)].map((_, i) => 
+                                `<i class="fas fa-star" style="color: ${i < review.rating ? 'var(--accent)' : '#ddd'}"></i>`
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>
+                <p class="review-text">"${review.text}"</p>
+                <div class="review-date" style="font-size: 0.8rem; color: var(--text-light);">
+                    <i class="fas fa-shopping-cart"></i> Pedido ${review.orderNumber} | ${review.date}
+                </div>
+            `;
+            container.appendChild(reviewCard);
+        });
+    }
+}
+
+// Inicializar reseñas al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    loadReviewsSection();
+    
+    // Re-inicializar estrellas cuando se abra tracking
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.querySelector('.rating-star')) {
+                        const orderNumber = node.id.match(/review-section-(.*)/)?.[1];
+                        if (orderNumber) {
+                            setTimeout(() => initReviewStars(orderNumber), 100);
+                        }
+                    }
+                });
+            }
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+
+// Hacer funciones globales
+window.submitReview = submitReview;
+window.initReviewStars = initReviewStars;
