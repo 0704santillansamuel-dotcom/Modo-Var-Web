@@ -669,22 +669,44 @@ if (hero) {
     });
 }
 
-/* =========================================
-   BARRA DE PROGRESO DE CARGA
-   ========================================= */
-const loadingProgress = document.querySelector('.loading-progress');
-if (loadingProgress) {
+// Carga PROGRESIVA elegante (4 segundos)
+window.addEventListener('load', () => {
+    const progressFill = document.querySelector('.progress-fill');
+    const progressText = document.querySelector('.progress-text');
+    const loadingStatus = document.querySelector('.loading-status');
+    
     let progress = 0;
+    const statuses = [
+        'Cargando tienda...',
+        'Preparando productos...',
+        'Configurando carrito...',
+        '¡Listo para comprar!'
+    ];
+    
     const interval = setInterval(() => {
-        progress += 5;
-        loadingProgress.style.width = `${progress}%`;
+        progress += Math.random() * 8 + 2;
+        if (progress > 100) progress = 100;
+        
+        progressFill.style.width = `${progress}%`;
+        progressText.textContent = `${Math.floor(progress)}%`;
+        
+        // Cambiar status cada 25%
+        if (progress > 25 && progress < 30) loadingStatus.textContent = statuses[1];
+        if (progress > 50 && progress < 55) loadingStatus.textContent = statuses[2];
+        if (progress > 85 && progress < 90) loadingStatus.textContent = statuses[3];
         
         if (progress >= 100) {
             clearInterval(interval);
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+                document.body.style.overflowY = "auto";
+                document.body.style.overflowX = "hidden";
+                document.getElementById("loading-screen").style.display = "none";
+                
+            }, 800);
         }
-    }, 100);
-}
-
+    }, 80);
+}); 
 /* =========================================
    NOTIFICACIÓN DE CARRITO ACTUALIZADO
    ========================================= */

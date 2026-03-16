@@ -98,7 +98,7 @@ input, textarea, select {
 }
 
 /* =========================================
-   PANTALLA DE CARGA
+   LOADING ELEGANTE - ESTÉTICA MODERN VAR
    ========================================= */
 #loading-screen {
     position: fixed;
@@ -106,58 +106,165 @@ input, textarea, select {
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--secondary);
+    background: linear-gradient(135deg, var(--secondary) 0%, #1a1a1a 100%);
     z-index: 9999;
     display: flex;
-    justify-content: center;
     align-items: center;
-    transition: opacity var(--transition-slow), visibility var(--transition-slow);
+    justify-content: center;
+    overflow: hidden;
 }
 
-body.loaded #loading-screen {
-    opacity: 0;
-    visibility: hidden;
+.loading-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.loading-container {
+/* Fondo cancha SUTIL */
+.loading-bg-field {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(ellipse at 30% 80%, rgba(15, 76, 26, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 60%, rgba(117, 170, 219, 0.1) 0%, transparent 50%),
+        linear-gradient(180deg, transparent 70%, rgba(15, 76, 26, 0.6) 100%);
+    opacity: 0.7;
+}
+
+.loading-content {
     text-align: center;
-    color: var(--arg-white);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: var(--border-radius-lg);
+    padding: 60px 40px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255,255,255,0.2);
+    max-width: 450px;
+    animation: slideUpFade 1s ease-out;
+}
+
+.logo-pulse {
+    margin-bottom: 30px;
 }
 
 .loading-logo {
-    width: 120px;
-    height: 120px;
-    margin-bottom: var(--spacing-sm);
-    animation: pulse 2s infinite;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    filter: drop-shadow(0 8px 25px rgba(117, 170, 219, 0.4));
+    animation: logoPulse 2s ease-in-out infinite;
 }
 
-.loading-text {
-    font-size: 1.2rem;
-    margin-bottom: var(--spacing-sm);
+.loading-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--arg-blue), #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
     letter-spacing: 2px;
 }
 
-.loading-bar {
-    width: 200px;
-    height: 4px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 2px;
+.loading-subtitle {
+    color: var(--text-light);
+    font-size: 1.1rem;
+    font-weight: 400;
+    margin-bottom: 35px;
+    letter-spacing: 1px;
+}
+
+.loading-status {
+    color: var(--arg-blue);
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+    min-height: 20px;
+}
+
+/* BARRA DE PROGRESO ELEGANTE */
+.progress-wrapper {
+    position: relative;
+}
+
+.progress-bar {
+    width: 280px;
+    height: 6px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 10px;
     overflow: hidden;
-    margin: 0 auto;
+    margin: 0 auto 12px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.loading-progress {
+.progress-fill {
     height: 100%;
-    background: var(--arg-blue);
+    background: linear-gradient(90deg, var(--arg-blue), #FFD700);
     width: 0%;
-    transition: width 0.1s linear;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 15px rgba(117, 170, 219, 0.5);
+    position: relative;
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.8; }
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation: shine 2s infinite;
 }
 
+.progress-text {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+/* ANIMACIONES SUAVES */
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes logoPulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 8px 25px rgba(117, 170, 219, 0.4));
+    }
+    50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 12px 35px rgba(117, 170, 219, 0.6));
+    }
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(300%); }
+}
+
+/* FIN DE CARGA */
+body.loaded #loading-screen {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+} 
 /* =========================================
    BARRA PROMOCIONAL
    ========================================= */
